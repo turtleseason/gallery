@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Gallery.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="450"
+             x:Class="Gallery.Views.FolderListView">
+    <TreeView Items="{Binding Items}" SelectedItems="{Binding SelectedItems}" SelectionMode="Multiple">
+        <TreeView.Styles>
+            <!-- is Style really the best way to bind IsExpanded? -->
+            <Style Selector="TreeViewItem">
+                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+            </Style>
+        </TreeView.Styles>
+        <TreeView.ItemTemplate>
+            <TreeDataTemplate ItemsSource="{Binding Children}">
+                <TextBlock Text="{Binding Name}"/>
+            </TreeDataTemplate>
+        </TreeView.ItemTemplate>
+    </TreeView>
+
+    <Design.DataContext>
+        <vm:FolderListViewModel/>
+    </Design.DataContext>
+</UserControl>
