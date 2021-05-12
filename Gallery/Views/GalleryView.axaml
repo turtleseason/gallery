@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Gallery.ViewModels"
+             xmlns:m="using:Gallery.Models"
              mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="450"
              x:Class="Gallery.Views.GalleryView">
     <ListBox Items="{Binding Items}">
@@ -11,14 +12,20 @@
                 <WrapPanel/>
             </ItemsPanelTemplate>
         </ListBox.ItemsPanel>
-        <ListBox.ItemTemplate>
-            <DataTemplate>
-                <StackPanel>
+        <ListBox.DataTemplates>
+            <DataTemplate DataType="{x:Type m:TrackedFile}">
+                <StackPanel ToolTip.Tip="{Binding FullPath}">
+                    <Panel Width="200" Height="200" Background="CadetBlue"/>
+                    <TextBlock Width="200" Text="{Binding Name}"/>
+                </StackPanel>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type m:GalleryFile}">
+                <StackPanel ToolTip.Tip="{Binding FullPath}">
                     <Panel Width="200" Height="200" Background="AliceBlue"/>
                     <TextBlock Width="200" Text="{Binding Name}"/>
                 </StackPanel>
             </DataTemplate>
-        </ListBox.ItemTemplate>
+        </ListBox.DataTemplates>
     </ListBox>
 
     <Design.DataContext>

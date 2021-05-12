@@ -13,8 +13,11 @@ namespace Gallery
         /// Just gotta try it and see how it works out~
         public static void RegisterDependencies()
         {
-            //Locator.CurrentMutable.RegisterConstant(new SelectedFilesService(), typeof(SelectedFilesService));
-            Locator.CurrentMutable.RegisterLazySingleton(() => new SelectedFilesService(), typeof(SelectedFilesService));
+            Locator.CurrentMutable.RegisterConstant(new FileSystemService(), typeof(IFileSystemService));
+
+            Locator.CurrentMutable.RegisterConstant(new DatabaseService(), typeof(IDatabaseService));
+
+            Locator.CurrentMutable.RegisterConstant(new SelectedFilesService(), typeof(ISelectedFilesService));
         }
     }
 }

@@ -1,8 +1,12 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 using DynamicData;
 
 using Gallery.Models;
+
+using Splat;
 
 namespace Gallery.Services
 {
@@ -15,23 +19,37 @@ namespace Gallery.Services
     //  - Changes to search parameters
     //    ^ Method calls to this service?
 
-    public class SelectedFilesService
+    public class SelectedFilesService : ISelectedFilesService
     {
-        ObservableCollection<GalleryFile> _files;
+        IDatabaseService _dbService;
+        IFileSystemService _fsService;
+
+        ISourceCache<GalleryFile, string> _files;
         FileCollection _selectedFiles;
 
-        public SelectedFilesService()
+        public SelectedFilesService(IDatabaseService? dbService = null, IFileSystemService? fsService = null)
         {
-            _files = new ObservableCollection<GalleryFile>();
+            _dbService = dbService ?? Locator.Current.GetService<IDatabaseService>();
+            _fsService = fsService ?? Locator.Current.GetService<IFileSystemService>();
+
+            _files = new SourceCache<GalleryFile, string>(x => x.FullPath);
             _selectedFiles = new FileCollection() { IncludeUntracked = true };
+
+            _dbService.OnChange += OnDatabaseChanged;
         }
 
-        /// Replace the current FileCollection with a new one
+        /// Exposes the set of selected files via a DynamicData observable
+        public IObservable<IChangeSet<GalleryFile, string>> Connect()
+        {
+            return _files.Connect();
+        }
+
+        /// Replaces the current FileCollection with a new one
         /// (for example, when running a search, or loading a saved search/collection).
         ///
         /// If ignoreSourceFolders is true or if the FileCollection doesn't have any SourceFolders,
         /// the search parameters will be updated but the previous source folders will be kept.
-        public void LoadFileCollection(FileCollection collection, bool ignoreSourceFolders=false)
+        public void LoadFileCollection(FileCollection collection, bool ignoreSourceFolders = false)
         {
             if (ignoreSourceFolders || collection.SourceFolders.Count == 0)
             {
@@ -56,35 +74,33 @@ namespace Gallery.Services
             PopulateFilesCollection();
         }
 
-        // property?
-        public ReadOnlyObservableCollection<GalleryFile> GetFiles()
-        {
-            return new ReadOnlyObservableCollection<GalleryFile>(_files);
-        }
-
+        // Todo: filter by parameters
+        // (should probably update more efficiently too, instead of reloading the entire collection each time?)
         void PopulateFilesCollection()
         {
             _files.Clear();
 
-            if (_selectedFiles == null)
-            {
-                return;
-            }
+            _files.AddOrUpdate(_dbService.GetFiles(_selectedFiles.SourceFolders));
 
             if (_selectedFiles.IncludeUntracked)
             {
+                // If SourceFolders is empty, this will show all tracked files and no untracked files;
+                // not sure if that's desirable or not
                 foreach (string path in _selectedFiles.SourceFolders)
                 {
-                    var files = FileSystemService.GetFiles(path);
+                    IEnumerable<GalleryFile>? files = _fsService.GetFiles(path);
                     if (files != null)
                     {
-                        _files.AddRange(files);
+                        // Skip files that are already tracked & in the collection
+                        _files.AddOrUpdate(files.Where(file => !_files.Lookup(file.FullPath).HasValue));
                     }
-                    // Todo: filter by parameters
                 }
             }
+        }
 
-            // Todo: query the DB for tracked files
+        void OnDatabaseChanged(object? sender, EventArgs e)
+        {
+            PopulateFilesCollection();
         }
     }
 }

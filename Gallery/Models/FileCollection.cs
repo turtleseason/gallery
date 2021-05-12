@@ -1,4 +1,4 @@
-﻿/// Represents a group of files filtered based on their containing folder and/or a set of search parameters to match against their metadata.
+﻿/// Represents a group of files filtered by their containing folder and/or a set of search parameters to match against their metadata.
 /// FileCollection doesn't actually contain or fetch any files; it defines a set of criteria that can be used to define a collection of files.
 
 using System.Collections.Generic;
