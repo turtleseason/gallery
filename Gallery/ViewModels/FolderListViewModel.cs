@@ -40,7 +40,7 @@
             SelectedItems = new();
 
             var selectedItemsObservable = SelectedItems.ToObservableChangeSet(x => x.FullPath);
-            var trackedFoldersObservable = _dbService.TrackedFolders();  // is it OK to share this observable?
+            var trackedFoldersObservable = _dbService.TrackedFolders();
 
             // CanExecute if SelectedItems contains at least one item that isn't already tracked
             var canExecute = selectedItemsObservable.Cast(x => x.FullPath)
@@ -59,7 +59,11 @@
 
             LoadFirstLevelChildren();
 
-            this.WhenActivated((CompositeDisposable disposables) => subscription.DisposeWith(disposables));
+            this.WhenActivated((CompositeDisposable disposables) =>
+            {
+                subscription.DisposeWith(disposables);
+                TrackSelectedFoldersCommand.DisposeWith(disposables);
+            });
         }
 
         public FolderListViewModel() : this(null, null, null)  // for XAML designer

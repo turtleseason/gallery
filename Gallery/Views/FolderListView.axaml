@@ -5,7 +5,10 @@
              xmlns:vm="using:Gallery.ViewModels"
              mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="450"
              x:Class="Gallery.Views.FolderListView">
-    <TreeView Items="{Binding Items}" SelectedItems="{Binding SelectedItems}" SelectionMode="Multiple">
+    <TreeView Items="{Binding Items}"
+              SelectedItems="{Binding SelectedItems}"
+              SelectionMode="Multiple"
+              ClipToBounds="True">
         <TreeView.Styles>
             <Style Selector="TreeViewItem">
                 <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
