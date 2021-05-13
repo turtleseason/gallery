@@ -1,9 +1,9 @@
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
-
 namespace Gallery.Views
 {
+    using Avalonia;
+    using Avalonia.Controls;
+    using Avalonia.Markup.Xaml;
+
     public class MainWindow : Window
     {
         public MainWindow()

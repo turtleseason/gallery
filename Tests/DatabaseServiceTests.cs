@@ -1,41 +1,43 @@
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.IO;
-using System.Linq;
-using System.Reactive.Linq;
-using System.Reflection;
-
-using Dapper;
-
-using DynamicData;
-
-using Gallery.Models;
-using Gallery.Services;
-
-using Microsoft.Data.Sqlite;
-
-using Moq;
-
-using NUnit.Framework;
-
 namespace Tests
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Configuration;
+    using System.IO;
+    using System.Linq;
+    using System.Reactive.Linq;
+    using System.Reflection;
+
+    using Dapper;
+
+    using DynamicData;
+
+    using Gallery.Models;
+    using Gallery.Services;
+
+    using Microsoft.Data.Sqlite;
+
+    using Moq;
+
+    using NUnit.Framework;
+
     public class DatabaseServiceTests
     {
-        readonly string connectionString = ConfigurationManager.ConnectionStrings["Default"].ConnectionString;
+        private readonly string connectionString = ConfigurationManager.ConnectionStrings["Default"].ConnectionString;
 
-        DatabaseService database;
-        SqliteConnection conn;
-        Mock<IFileSystemService> mockFileSystem;
+        private DatabaseService database;
+        private SqliteConnection conn;
+        private Mock<IFileSystemService> mockFileSystem;
 
         /// Gets all files in the given folder(s) in the current mocked file system (for testing against results from the database).
         public IEnumerable<GalleryFile> GetMockFiles(params string[] paths)
         {
             List<GalleryFile> result = new();
-            foreach (string path in paths) {
+            foreach (string path in paths)
+            {
                 result.AddRange(mockFileSystem.Object.GetFiles(path));
             }
+
             return result;
         }
 
@@ -66,11 +68,10 @@ namespace Tests
             mockFileSystem.Setup(mock => mock.GetFiles(It.IsAny<string>())).Returns((string path) =>
                 new List<GalleryFile>()
                 {
-                    new GalleryFile{ FullPath = Path.Combine(path, "File1.png") },
+                    new GalleryFile { FullPath = Path.Combine(path, "File1.png") },
                     new GalleryFile { FullPath  = Path.Combine(path, "file2.jpg") },
                     new GalleryFile { FullPath  = Path.Combine(path, "a.txt") },
-                }
-            );
+                });
             database = new DatabaseService(mockFileSystem.Object);
         }
 
@@ -160,7 +161,7 @@ namespace Tests
 
             IReadOnlyCollection<string> result = null;
             database.TrackedFolders().ToCollection().Subscribe(folders => result = folders);
-            
+
             Assert.That(result, Is.EquivalentTo(paths));
         }
 

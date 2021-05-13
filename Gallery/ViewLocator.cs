@@ -1,10 +1,12 @@
-using Avalonia.Controls;
-using Avalonia.Controls.Templates;
-using Gallery.ViewModels;
-using System;
-
 namespace Gallery
 {
+    using System;
+
+    using Avalonia.Controls;
+    using Avalonia.Controls.Templates;
+
+    using Gallery.ViewModels;
+
     public class ViewLocator : IDataTemplate
     {
         public bool SupportsRecycling => false;

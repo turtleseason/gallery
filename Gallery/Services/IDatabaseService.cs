@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-
-using DynamicData;
-
-using Gallery.Models;
-
-namespace Gallery.Services
+﻿namespace Gallery.Services
 {
+    using System;
+    using System.Collections.Generic;
+
+    using DynamicData;
+
+    using Gallery.Models;
+
     public interface IDatabaseService
     {
         event EventHandler? OnChange;

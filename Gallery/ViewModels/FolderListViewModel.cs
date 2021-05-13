@@ -1,33 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Reactive;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
-
-using DynamicData;
-using DynamicData.Aggregation;
-using DynamicData.Binding;
-
-using Gallery.Services;
-
-using ReactiveUI;
-
-using Splat;
-
-namespace Gallery.ViewModels
+﻿namespace Gallery.ViewModels
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Reactive;
+    using System.Reactive.Disposables;
+    using System.Reactive.Linq;
+
+    using DynamicData;
+    using DynamicData.Aggregation;
+    using DynamicData.Binding;
+
+    using Gallery.Services;
+
+    using ReactiveUI;
+
+    using Splat;
+
     public class FolderListViewModel : ViewModelBase, IActivatableViewModel
     {
-        IDatabaseService _dbService;
-        IFileSystemService _fsService;
-        ISelectedFilesService _sfService;
+        private IDatabaseService _dbService;
+        private IFileSystemService _fsService;
+        private ISelectedFilesService _sfService;
 
-        ReadOnlyObservableCollection<string> _trackedFolders;
+        private ReadOnlyObservableCollection<string> _trackedFolders;
 
-        public FolderListViewModel(IDatabaseService? dbService = null, IFileSystemService ? fsService=null, ISelectedFilesService? sfService=null)
+        public FolderListViewModel(IDatabaseService? dbService = null, IFileSystemService? fsService = null, ISelectedFilesService? sfService = null)
         {
             _dbService = dbService ?? Locator.Current.GetService<IDatabaseService>();
             _fsService = fsService ?? Locator.Current.GetService<IFileSystemService>();
@@ -35,7 +35,7 @@ namespace Gallery.ViewModels
 
             IEnumerable<FolderListItemViewModel>? availableDrives = _fsService.GetAvailableDrives()
                 ?.Select(driveInfo => new FolderListItemViewModel(driveInfo.Name, dbService: dbService, fsService: fsService));
-            
+
             Items = availableDrives != null ? new(availableDrives) : new();
             SelectedItems = new();
 
@@ -50,7 +50,7 @@ namespace Gallery.ViewModels
 
             TrackSelectedFoldersCommand = ReactiveCommand.Create(TrackSelectedFolders, canExecute);
             TrackFolderCommand = ReactiveCommand.Create((FolderListItemViewModel vm) => TrackFolder(vm));
-            
+
             selectedItemsObservable.Subscribe(changes => UpdateSelectedFolders(changes));
 
             IDisposable subscription = trackedFoldersObservable.ObserveOn(RxApp.MainThreadScheduler)
@@ -65,16 +65,15 @@ namespace Gallery.ViewModels
         public FolderListViewModel() : this(null, null, null)  // for XAML designer
         { }
 
-
         public ViewModelActivator Activator { get; } = new ViewModelActivator();
-        
+
         public ObservableCollection<FolderListItemViewModel> Items { get; }
         public ObservableCollection<FolderListItemViewModel> SelectedItems { get; }
 
         public ReactiveCommand<FolderListItemViewModel, Unit> TrackFolderCommand { get; }
         public ReactiveCommand<Unit, Unit> TrackSelectedFoldersCommand { get; }
 
-        void UpdateSelectedFolders(IChangeSet<FolderListItemViewModel, string> changes)
+        private void UpdateSelectedFolders(IChangeSet<FolderListItemViewModel, string> changes)
         {
             foreach (var change in changes)
             {
@@ -89,7 +88,7 @@ namespace Gallery.ViewModels
             }
         }
 
-        void LoadFirstLevelChildren()
+        private void LoadFirstLevelChildren()
         {
             foreach (var item in Items)
             {
@@ -97,21 +96,21 @@ namespace Gallery.ViewModels
             }
         }
 
-        void TrackFolder(FolderListItemViewModel vm)
+        private void TrackFolder(FolderListItemViewModel vm)
         {
             Debug.WriteLine($"Tracking {vm.Name}");
-            
+
             if (!_trackedFolders.Contains(vm.FullPath))
             {
                 _dbService.TrackFolder(vm.FullPath);
-            } 
+            }
             else
             {
                 Debug.WriteLine("  Already tracked - skipping");
             }
         }
 
-        void TrackSelectedFolders()
+        private void TrackSelectedFolders()
         {
             foreach (FolderListItemViewModel vm in SelectedItems)
             {

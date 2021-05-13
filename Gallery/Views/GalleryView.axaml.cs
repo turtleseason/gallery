@@ -1,12 +1,12 @@
-using Avalonia.Markup.Xaml;
-using Avalonia.ReactiveUI;
-
-using Gallery.ViewModels;
-
-using ReactiveUI;
-
 namespace Gallery.Views
 {
+    using Avalonia.Markup.Xaml;
+    using Avalonia.ReactiveUI;
+
+    using Gallery.ViewModels;
+
+    using ReactiveUI;
+
     public class GalleryView : ReactiveUserControl<GalleryViewModel>
     {
         public GalleryView()

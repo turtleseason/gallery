@@ -1,10 +1,11 @@
-using ReactiveUI;
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Gallery.ViewModels
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
+
+    using ReactiveUI;
+
     public class ViewModelBase : ReactiveObject
     {
     }

@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-using DynamicData;
-
-using Gallery.Models;
-
-using Splat;
-
-namespace Gallery.Services
+﻿namespace Gallery.Services
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+
+    using DynamicData;
+
+    using Gallery.Models;
+
+    using Splat;
+
     // File collection can change with:
     //  - File system updates
     //  - User data updates
@@ -18,14 +18,13 @@ namespace Gallery.Services
     //  - Changes to selected folders
     //  - Changes to search parameters
     //    ^ Method calls to this service?
-
     public class SelectedFilesService : ISelectedFilesService
     {
-        IDatabaseService _dbService;
-        IFileSystemService _fsService;
+        private IDatabaseService _dbService;
+        private IFileSystemService _fsService;
 
-        ISourceCache<GalleryFile, string> _files;
-        FileCollection _selectedFiles;
+        private ISourceCache<GalleryFile, string> _files;
+        private FileCollection _selectedFiles;
 
         public SelectedFilesService(IDatabaseService? dbService = null, IFileSystemService? fsService = null)
         {
@@ -76,7 +75,7 @@ namespace Gallery.Services
 
         // Todo: filter by parameters
         // (should probably update more efficiently too, instead of reloading the entire collection each time?)
-        void PopulateFilesCollection()
+        private void PopulateFilesCollection()
         {
             _files.Clear();
 
@@ -98,7 +97,7 @@ namespace Gallery.Services
             }
         }
 
-        void OnDatabaseChanged(object? sender, EventArgs e)
+        private void OnDatabaseChanged(object? sender, EventArgs e)
         {
             PopulateFilesCollection();
         }

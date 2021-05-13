@@ -1,26 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.Linq;
-using System.Reactive.Linq;
-
-using DynamicData;
-
-using Gallery.Services;
-
-using ReactiveUI;
-
-using Splat;
-
-namespace Gallery.ViewModels
+﻿namespace Gallery.ViewModels
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
+    using System.IO;
+    using System.Linq;
+    using System.Reactive.Linq;
+
+    using DynamicData;
+
+    using Gallery.Services;
+
+    using ReactiveUI;
+
+    using Splat;
+
     public class FolderListItemViewModel : ViewModelBase
     {
-        IFileSystemService _fsService;
-        IDatabaseService _dbService;
+        private IFileSystemService _fsService;
+        private IDatabaseService _dbService;
 
-        bool _hasLoadedChildren = false;
+        private bool _hasLoadedChildren = false;
 
         public FolderListItemViewModel(DirectoryInfo directoryInfo, IDatabaseService? dbService = null, IFileSystemService? fsService = null)
         {
@@ -35,7 +35,13 @@ namespace Gallery.ViewModels
 
             this.WhenAnyValue(x => x.IsExpanded)
                 .Where(x => x)
-                .Subscribe(_ => { foreach (var child in Children) child.LoadChildren(); });
+                .Subscribe(_ =>
+                {
+                    foreach (var child in Children)
+                    {
+                        child.LoadChildren();
+                    }
+                });
         }
 
         public FolderListItemViewModel(string path, IDatabaseService? dbService = null, IFileSystemService? fsService = null)
@@ -51,8 +57,8 @@ namespace Gallery.ViewModels
         public ObservableCollection<FolderListItemViewModel> Children { get; }
 
         public IObservable<bool> IsTracked { get; init; }
-        
-        bool _isExpanded = false;
+
+        private bool _isExpanded = false;
         public bool IsExpanded
         {
             get => _isExpanded;
@@ -69,7 +75,7 @@ namespace Gallery.ViewModels
                     Children.AddRange(childDirectories.Select(path =>
                         new FolderListItemViewModel(path, dbService: _dbService, fsService: _fsService)));
                 }
-                
+
                 _hasLoadedChildren = true;
             }
         }

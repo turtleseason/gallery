@@ -1,21 +1,21 @@
-﻿using System;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
-
-using Gallery.Services;
-using Gallery.ViewModels;
-
-using Moq;
-
-using NUnit.Framework;
-
-namespace Tests
+﻿namespace Tests
 {
-    class FolderListItemViewModelTests
-    {
-        FolderListItemViewModel vm;
+    using System;
+    using System.Reactive.Linq;
+    using System.Reactive.Subjects;
 
-        Mock<IDatabaseService> mockDb;
+    using Gallery.Services;
+    using Gallery.ViewModels;
+
+    using Moq;
+
+    using NUnit.Framework;
+
+    internal class FolderListItemViewModelTests
+    {
+        private FolderListItemViewModel vm;
+
+        private Mock<IDatabaseService> mockDb;
 
         [SetUp]
         public void SetUp()
@@ -29,7 +29,7 @@ namespace Tests
         {
             mockDb.Setup(mock => mock.IsTracked(It.IsAny<string>())).Returns(Observable.Return(false));
             vm = new FolderListItemViewModel(@"C:\fakepath", dbService: mockDb.Object);
-            
+
             bool? result = null;
             vm.IsTracked.Subscribe(isTracked => result = isTracked);
 

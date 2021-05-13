@@ -1,25 +1,25 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
-
-using DynamicData;
-using DynamicData.Binding;
-
-using Gallery.Models;
-using Gallery.Services;
-
-using ReactiveUI;
-
-using Splat;
-
-namespace Gallery.ViewModels
+﻿namespace Gallery.ViewModels
 {
+    using System;
+    using System.Collections.ObjectModel;
+    using System.Reactive.Disposables;
+    using System.Reactive.Linq;
+
+    using DynamicData;
+    using DynamicData.Binding;
+
+    using Gallery.Models;
+    using Gallery.Services;
+
+    using ReactiveUI;
+
+    using Splat;
+
     public class GalleryViewModel : ViewModelBase, IActivatableViewModel
     {
-        ISelectedFilesService _sfService;
+        private ISelectedFilesService _sfService;
 
-        public GalleryViewModel(ISelectedFilesService? sfService=null)
+        public GalleryViewModel(ISelectedFilesService? sfService = null)
         {
             _sfService = sfService ?? Locator.Current.GetService<ISelectedFilesService>();
 
@@ -37,8 +37,8 @@ namespace Gallery.ViewModels
         { }
 
         public ViewModelActivator Activator { get; } = new ViewModelActivator();
-        
-        ReadOnlyObservableCollection<GalleryFile> _items;
+
+        private ReadOnlyObservableCollection<GalleryFile> _items;
         public ReadOnlyObservableCollection<GalleryFile> Items => _items;
     }
 }

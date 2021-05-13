@@ -1,34 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reactive.Linq;
-
-using Dapper;
-
-using DynamicData;
-
-using Gallery.Models;
-
-using Microsoft.Data.Sqlite;
-
-using Splat;
-
-// Todo: Handling SQL exceptions?
-namespace Gallery.Services
+﻿namespace Gallery.Services
 {
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static",
+    using System;
+    using System.Collections.Generic;
+    using System.Configuration;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
+    using System.Reactive.Linq;
+
+    using Dapper;
+
+    using DynamicData;
+
+    using Gallery.Models;
+
+    using Microsoft.Data.Sqlite;
+
+    using Splat;
+
+    // Todo: Handling SQL exceptions?
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Performance",
+        "CA1822:Mark members as static",
         Justification = "Use instance methods to ensure that the DB is initialized (via the constructor) before accessing it")]
     public class DatabaseService : IDatabaseService
     {
-        public event EventHandler? OnChange;
+        private IFileSystemService _fsService;
 
-
-        IFileSystemService _fsService;
-
-        ISourceCache<string, string> _trackedFolders;
+        private ISourceCache<string, string> _trackedFolders;
 
         public DatabaseService(IFileSystemService? fsService = null)
         {
@@ -40,9 +39,11 @@ namespace Gallery.Services
             _trackedFolders.AddOrUpdate(GetTrackedFolders());
         }
 
+        public event EventHandler? OnChange;
+
         // The fallback value is to avoid breaking the XAML previewer (the default connection string is null at design time)
-        static string ConnectionString => ConfigurationManager.ConnectionStrings["Default"]?.ConnectionString
-            ?? $"Data Source={ Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Application.db") }";
+        private static string ConnectionString => ConfigurationManager.ConnectionStrings["Default"]?.ConnectionString
+            ?? $"Data Source={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Application.db")}";
 
         public IObservable<IChangeSet<string, string>> TrackedFolders()
         {
@@ -95,12 +96,13 @@ namespace Gallery.Services
         /// Adds the given folder and all the files in it to the database (non-recursively).
         /// Does nothing (prints a warning) if the folder is already tracked; however, this is not thread-safe
         /// (could fail with a SQL exception if two threads try to track the same folder at once)
-        
+        //
         // Todo: allow excluding files, auto-adding new files
         // (Return true/false for success/failure? Or throw exception if failed...?)
         public void TrackFolder(string folderPath)
         {
-            if (_trackedFolders.Lookup(folderPath).HasValue) {
+            if (_trackedFolders.Lookup(folderPath).HasValue)
+            {
                 Trace.TraceWarning($"TrackFolder: Path is already tracked ({folderPath})");
                 return;
             }
@@ -146,7 +148,7 @@ namespace Gallery.Services
         }
 
         /// Create the database file and tables if they don't already exist.
-        void CreateTables()
+        private void CreateTables()
         {
             // (AUTOINCREMENT on folder_id and file_id shouldn't be necessary because the foreign key constraints will
             //  prevent lingering references to deleted IDs, so it's safe to reuse IDs?)
@@ -173,13 +175,13 @@ namespace Gallery.Services
                 );
             ";
 
-            using (SqliteConnection conn = new(ConnectionString))
+            using (var conn = new SqliteConnection(ConnectionString))
             {
                 conn.Execute(createTablesSql);
             }
         }
 
-        IEnumerable<string> GetTrackedFolders()
+        private IEnumerable<string> GetTrackedFolders()
         {
             using (var conn = new SqliteConnection(ConnectionString))
             {

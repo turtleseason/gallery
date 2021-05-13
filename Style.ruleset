@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<RuleSet Name="StyleCop analyzers for Gallery project" Description="Overrides of default StyleCop settings" ToolsVersion="14.0">
+    <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers.SpecialRules">
+        <Rule Id="SA0001"  Action="None" />             <!-- XML comment analysis disabled -->
+    </Rules>
+    
+    <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers.SpacingRules">
+        <!-- Disabled to allow two spaces before inline comments -->
+        <Rule Id="SA1025"  Action="None" />             <!-- Code should not contain multiple whitespace in a row -->
+    </Rules>
+    
+    <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers.ReadabilityRules">
+        <Rule Id="SA1101"  Action="None" />             <!-- Prefix local calls with this -->
+        <Rule Id="SA1128"  Action="None" />             <!-- Put constructor initializers on their own line -->
+    </Rules>
+    
+    <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers.OrderingRules">
+        <!-- Generally elements should appear in the recommended order, with the exception of backing fields, which should immediately precede the corresponding property -->
+        <Rule Id="SA1201"  Action="Info" />          <!-- Elements should appear in the correct order -->
+    </Rules>
+    
+    <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers.NamingRules">
+        <Rule Id="SA1309"  Action="None" />             <!-- Field names should not begin with underscore -->
+    </Rules>
+    
+    <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers.LayoutRules">
+        <!-- Allow empty constructor braces on the same line -->
+        <Rule Id="SA1502"  Action="None" />             <!-- Element should not be on a single line -->
+        <Rule Id="SA1512"  Action="None" />             <!-- Single-line comments should not be followed by blank line -->
+        <Rule Id="SA1515"  Action="None" />             <!-- Single-line comment should be preceded by blank line -->
+        <Rule Id="SA1516"  Action="None" />             <!-- Elements should be separated by blank line -->
+    </Rules>
+    
+    <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers.DocumentationRules">
+        <Rule Id="SA1600"  Action="None" />             <!-- Elements should be documented -->
+        <Rule Id="SA1601"  Action="None" />             <!-- Partial elements should be documented -->
+        <Rule Id="SA1602"  Action="None" />             <!-- Enumeration items should be documented -->
+        <Rule Id="SA1604"  Action="None" />             <!-- Element documentation should have summary -->
+        <Rule Id="SA1611"  Action="None" />             <!-- Element parameters should be documented -->
+        <Rule Id="SA1615"  Action="None" />             <!-- Element return value should be documented -->
+        <!-- Using three slashes for now to differentiate between "documentation" comments and notes/todos; might change later -->
+        <Rule Id="SA1626"  Action="None" />             <!-- Single-line comments should not use documentation style slashes -->
+        <Rule Id="SA1633"  Action="None" />             <!-- File should have header -->
+    </Rules>
+</RuleSet>

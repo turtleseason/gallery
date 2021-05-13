@@ -1,18 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security;
-
-using Gallery.Models;
-
-namespace Gallery.Services
+﻿namespace Gallery.Services
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Security;
+
+    using Gallery.Models;
+
     // General I/O exceptions https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
     //
     // Todo:    - Can exception handling be reused between methods at all?
     //          - Log exceptions? (They already get printed in the debug output though)
-    class FileSystemService : IFileSystemService
+    internal class FileSystemService : IFileSystemService
     {
         /// Returns the list of files in the given directory, or null if reading the directory fails.
         public IEnumerable<GalleryFile>? GetFiles(string path)
@@ -61,7 +61,7 @@ namespace Gallery.Services
         }
 
         /// Returns the available drives on the system, or null if an I/O error occurred.
-        // 
+        //
         // Todo: return GalleryFile objects like GetFiles?
         public IEnumerable<DriveInfo>? GetAvailableDrives()
         {

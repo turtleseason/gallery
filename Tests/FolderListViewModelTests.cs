@@ -1,30 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reactive.Linq;
-
-using DynamicData;
-
-using Gallery.Services;
-using Gallery.ViewModels;
-
-using Moq;
-
-using NUnit.Framework;
-
-namespace Tests
+﻿namespace Tests
 {
-    class FolderListViewModelTests
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Reactive.Linq;
+
+    using DynamicData;
+
+    using Gallery.Services;
+    using Gallery.ViewModels;
+
+    using Moq;
+
+    using NUnit.Framework;
+
+    internal class FolderListViewModelTests
     {
-        FolderListViewModel vm;
+        private FolderListViewModel vm;
 
-        Mock<IDatabaseService> mockDb;
-        Mock<IFileSystemService> mockFileSystem;
-        Mock<ISelectedFilesService> mockFiles;
+        private Mock<IDatabaseService> mockDb;
+        private Mock<IFileSystemService> mockFileSystem;
+        private Mock<ISelectedFilesService> mockFiles;
 
-        ISourceCache<string, string> trackedFolders;
-
+        private ISourceCache<string, string> trackedFolders;
 
         [SetUp]
         public void SetUp()
@@ -56,7 +55,7 @@ namespace Tests
             mockDb.Setup(mock => mock.TrackFolder(It.IsAny<string>()));
 
             vm = new FolderListViewModel(dbService: mockDb.Object, fsService: mockFileSystem.Object, sfService: mockFiles.Object);
-            
+
             IEnumerable<FolderListItemViewModel> items = vm.Items.Concat(vm.Items.SelectMany(item => item.Children.Take(2)));
             IEnumerable<FolderListItemViewModel> notSelected = vm.Items.SelectMany(item => item.Children.TakeLast(item.Children.Count - 2));
             vm.SelectedItems.Add(items);
@@ -67,6 +66,7 @@ namespace Tests
             {
                 mockDb.Verify(mock => mock.TrackFolder(item.FullPath), Times.Once);
             }
+
             foreach (var item in notSelected)
             {
                 mockDb.Verify(mock => mock.TrackFolder(item.FullPath), Times.Never);
@@ -83,7 +83,7 @@ namespace Tests
 
             bool? canExecute = null;
             vm.TrackSelectedFoldersCommand.CanExecute.Subscribe(x => canExecute = x);
-            
+
             var trackedAndUntrackedItems = vm.Items.SelectMany(item => item.Children.Take(2));
             vm.SelectedItems.Add(trackedAndUntrackedItems);
             Assert.IsTrue(canExecute);
@@ -100,10 +100,10 @@ namespace Tests
 
             var selectedItems = vm.Items.SelectMany(item => item.Children.Take(2));
             vm.SelectedItems.Add(selectedItems);
-            
+
             bool? canExecute = null;
             vm.TrackSelectedFoldersCommand.CanExecute.Subscribe(x => canExecute = x);
-            
+
             Assert.IsTrue(canExecute);
 
             trackedFolders.AddOrUpdate(selectedItems.Select(x => x.FullPath));

@@ -1,11 +1,12 @@
-using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Markup.Xaml;
-using Gallery.ViewModels;
-using Gallery.Views;
-
 namespace Gallery
 {
+    using Avalonia;
+    using Avalonia.Controls.ApplicationLifetimes;
+    using Avalonia.Markup.Xaml;
+
+    using Gallery.ViewModels;
+    using Gallery.Views;
+
     public class App : Application
     {
         public override void Initialize()
