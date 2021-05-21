@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="300"
+             x:Class="Gallery.Views.AddTagsView">
+    <StackPanel Margin="15" HorizontalAlignment="Stretch">
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+            <StackPanel.Styles>
+                <Style Selector="Label">
+                    <Setter Property="Margin" Value="0,0,10,0"/>
+                </Style>
+                <Style Selector="Label.small">
+                    <Setter Property="FontSize" Value="12"/>
+                    <Setter Property="FontStyle" Value="Italic"/>
+                </Style>
+                <Style Selector="TextBox">
+                    <Setter Property="Margin" Value="0,0,15,0"/>
+                    <Setter Property="VerticalAlignment" Value="Top"/>
+                </Style>
+            </StackPanel.Styles>
+
+            <Label>Tag name:</Label>
+            <TextBox Text="{Binding Name}" Width="120"/>
+            <StackPanel>
+                <Label>Value:</Label>
+                <Label Classes="small">(optional)</Label>
+            </StackPanel>
+            <TextBox Text="{Binding Value}" Width="120"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <StackPanel.Styles>
+                <Style Selector="Button">
+                    <Setter Property="Margin" Value="10,0,0,0"/>
+                </Style>
+            </StackPanel.Styles>
+            <Button Command="{Binding CloseCommand}">Cancel</Button>
+            <Button Command="{Binding AddTagsCommand}">OK</Button>
+        </StackPanel>
+
+    </StackPanel>
+</UserControl>

@@ -4,31 +4,76 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Gallery.ViewModels"
              xmlns:m="using:Gallery.Models"
-             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="450"
+             xmlns:c="using:Gallery.Converters"
+             xmlns:dd="using:Gallery.DesignData"
+             mc:Ignorable="d" d:DesignWidth="680" d:DesignHeight="550"
              x:Class="Gallery.Views.GalleryView">
-    <ListBox Items="{Binding Items}">
+
+    <UserControl.DataTemplates>
+        <DataTemplate DataType="{x:Type m:GalleryFile}">
+            <StackPanel Width="200">
+
+                <StackPanel.ContextMenu>
+                    <ContextMenu IsVisible="{Binding, Converter={x:Static c:GalleryConverters.IsTracked}}">
+                        <MenuItem Header="Add tag..."
+                                  Command="{Binding $parent[UserControl].DataContext.AddTagCommand}"/>
+                    </ContextMenu>
+                </StackPanel.ContextMenu>
+
+                <Image Source="{Binding Thumbnail}" Width="200"/>
+                <Panel Width="200"
+                       Height="200"
+                       Background="Gray"
+                       IsVisible="{Binding Thumbnail, Converter={x:Static ObjectConverters.IsNull}}">
+                    <PathIcon Data="{StaticResource document_regular}"
+                              Width="50"
+                              Height="50"/>
+                </Panel>
+
+                <TextBlock Text="{Binding Name}"
+                           ToolTip.Tip="{Binding FullPath}"
+                           TextWrapping="Wrap"
+                           Width="200"
+                           Margin="0,8,0,5"/>
+
+                <ItemsControl Items="{Binding Tags}">
+                    <ItemsControl.DataTemplates>
+                        <DataTemplate DataType="{x:Type m:Tag}">
+                            <Border ToolTip.Tip="{Binding FullString}"
+                                    Background="DarkMagenta"
+                                    CornerRadius="5"
+                                    Margin="0,5,5,0"
+                                    Padding="5">
+                                <TextBlock Text="{Binding FullString}"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.DataTemplates>
+
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.DataTemplates>
+
+    <ListBox SelectedItems="{Binding SelectedItems}"
+             Items="{Binding Items}"
+             SelectionMode="Multiple"
+             ClipToBounds="True">
         <ListBox.ItemsPanel>
             <ItemsPanelTemplate>
                 <WrapPanel/>
             </ItemsPanelTemplate>
         </ListBox.ItemsPanel>
-        <ListBox.DataTemplates>
-            <DataTemplate DataType="{x:Type m:TrackedFile}">
-                <StackPanel ToolTip.Tip="{Binding FullPath}">
-                    <Panel Width="200" Height="200" Background="CadetBlue"/>
-                    <TextBlock Width="200" Text="{Binding Name}"/>
-                </StackPanel>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type m:GalleryFile}">
-                <StackPanel ToolTip.Tip="{Binding FullPath}">
-                    <Panel Width="200" Height="200" Background="AliceBlue"/>
-                    <TextBlock Width="200" Text="{Binding Name}"/>
-                </StackPanel>
-            </DataTemplate>
-        </ListBox.DataTemplates>
     </ListBox>
 
     <Design.DataContext>
-        <vm:GalleryViewModel/>
+        <dd:DesignGalleryViewModel/>
     </Design.DataContext>
+
 </UserControl>

@@ -66,30 +66,47 @@
         //       - *should* it return files from all folders if empty?
         public IEnumerable<TrackedFile> GetFiles(IEnumerable<string> folders)
         {
-            string allFoldersSql = @"
-                SELECT Files.path
+            string querySql = @$"
+                SELECT Files.path as {nameof(TrackedFile.FullPath)},
+                       Tags.tag as {nameof(Tag.Name)},
+                       Tags.tag_value as {nameof(Tag.Value)}
                   FROM Files
+             LEFT JOIN Tags
+                    ON Tags.file_id = Files.file_id
             ";
 
-            string querySql = @"
-                SELECT Files.path
-                  FROM Files
-                 INNER JOIN Folders
-                    ON Files.folder_id = Folders.folder_id
-                 WHERE Folders.path in @Folders
-            ";
+            if (folders.Any())
+            {
+                querySql += @"
+                    INNER JOIN Folders
+                       ON Files.folder_id = Folders.folder_id
+                    WHERE Folders.path in @Folders
+                ";
+            }
 
             using (var conn = new SqliteConnection(ConnectionString))
             {
-                if (folders.Any())
-                {
-                    return conn.Query<string>(querySql, new { Folders = folders })
-                        .Select(path => new TrackedFile { FullPath = path });
-                }
-                else
-                {
-                    return conn.Query<string>(allFoldersSql).Select(path => new TrackedFile { FullPath = path });
-                }
+                var result = conn.Query<TrackedFile, Tag, TrackedFile>(
+                    querySql,
+                    (file, tag) =>
+                    {
+                        if (tag.Name != null)
+                        {
+                            file.Tags.Add(tag);
+                        }
+
+                        return file;
+                    },
+                    param: new { Folders = folders },
+                    splitOn: nameof(Tag.Name));
+
+                return result.GroupBy(file => file.FullPath)
+                    .Select(group =>
+                    {
+                        TrackedFile file = group.First();
+                        file.Tags.UnionWith(group.Where(x => x.Tags.Count > 0).Select(x => x.Tags.Single()));
+                        return file;
+                    });
             }
         }
 
@@ -118,7 +135,7 @@
                 return;
             }
 
-            using (SqliteConnection conn = new(ConnectionString))
+            using (var conn = new SqliteConnection(ConnectionString))
             {
                 int folderId = conn.Query<int>(addFolderSql, new { Path = folderPath }).First();
 
@@ -138,7 +155,7 @@
         {
             string deleteFolderSql = @"DELETE FROM Folders WHERE path = @Path";
 
-            using (SqliteConnection conn = new(ConnectionString))
+            using (var conn = new SqliteConnection(ConnectionString))
             {
                 conn.Execute(deleteFolderSql, new { Path = folderPath });
             }
@@ -147,11 +164,28 @@
             OnChange?.Invoke(this, new EventArgs());
         }
 
+        /// Skips duplicate tags (where the given file already has a tag with the same name and value).
+        /// Also skips any untracked files.
+        public void AddTag(Tag tag, params string[] filePaths)
+        {
+            string insertSql = @"
+                INSERT OR IGNORE INTO Tags(file_id, tag, tag_value)
+                SELECT file_id, @Name, @Value
+                  FROM Files
+                 WHERE path in @Paths
+            ";
+
+            using (var conn = new SqliteConnection(ConnectionString))
+            {
+                conn.Execute(insertSql, new { Paths = filePaths, tag.Name, tag.Value });
+            }
+
+            OnChange?.Invoke(this, new EventArgs());
+        }
+
         /// Create the database file and tables if they don't already exist.
         private void CreateTables()
         {
-            // (AUTOINCREMENT on folder_id and file_id shouldn't be necessary because the foreign key constraints will
-            //  prevent lingering references to deleted IDs, so it's safe to reuse IDs?)
             string createTablesSql = @"
                 CREATE TABLE IF NOT EXISTS Folders (
                     folder_id INTEGER PRIMARY KEY NOT NULL,

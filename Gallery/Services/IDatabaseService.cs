@@ -18,5 +18,7 @@
 
         void TrackFolder(string folderPath);
         void UntrackFolder(string folderPath);
+
+        void AddTag(Tag tag, params string[] filePaths);
     }
 }

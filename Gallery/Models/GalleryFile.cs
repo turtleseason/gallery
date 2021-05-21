@@ -2,6 +2,8 @@
 {
     using System.IO;
 
+    using Avalonia.Media.Imaging;
+
     // Todo: automatically pull in some file metadata?
     public class GalleryFile
     {
@@ -12,38 +14,27 @@
         public string FullPath { get; init; } = string.Empty;
 
         private string? _name;
-        public string Name
-        {
-            get
-            {
-                if (_name == null)
-                {
-                    _name = Path.GetFileName(FullPath);
-                }
+        public string Name => _name ??= Path.GetFileName(FullPath);
 
-                return _name;
-            }
-        }
+        public int? Width { get; set; } = null;
 
-        public int? Width { get; } = null;
+        public int? Height { get; set; } = null;
 
-        public int? Height { get; } = null;
+        public IBitmap? Thumbnail { get; set; } = null;
 
-        // Thumbnail
+        ////public override bool Equals(object? obj)
+        ////{
+        ////    if (obj == null || this.GetType() != obj.GetType())
+        ////    {
+        ////        return false;
+        ////    }
 
-        public override bool Equals(object? obj)
-        {
-            if (obj == null || this.GetType() != obj.GetType())
-            {
-                return false;
-            }
+        ////    return this.FullPath == (obj as GalleryFile)!.FullPath;
+        ////}
 
-            return this.FullPath == (obj as GalleryFile)!.FullPath;
-        }
-
-        public override int GetHashCode()
-        {
-            return FullPath.GetHashCode();
-        }
+        ////public override int GetHashCode()
+        ////{
+        ////    return FullPath.GetHashCode();
+        ////}
     }
 }

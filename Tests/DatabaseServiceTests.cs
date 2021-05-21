@@ -151,6 +151,30 @@ namespace Tests
         }
 
         [Test]
+        public void GetFiles_ReturnsFileTags()
+        {
+            Tag tag = new Tag("I am a tag", "with a value");
+            string folder = @"C:\fakepath";
+            string file = GetMockFilePaths(folder).First();
+
+            database.TrackFolder(folder);
+            database.AddTag(tag, file);
+
+            IEnumerable<TrackedFile> results = database.GetFiles(new[] { folder });
+            foreach (TrackedFile result in results)
+            {
+                if (result.FullPath == file)
+                {
+                    Assert.That(result.Tags, Is.EquivalentTo(new[] { tag }));
+                }
+                else
+                {
+                    Assert.IsFalse(result.Tags.Any());
+                }
+            }
+        }
+
+        [Test]
         public void TrackedFolders_ReturnsAllCurrentFolders()
         {
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };

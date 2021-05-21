@@ -1,10 +1,18 @@
 namespace Gallery.Views
 {
-    using Avalonia;
-    using Avalonia.Controls;
-    using Avalonia.Markup.Xaml;
+    using System.Reactive.Disposables;
+    using System.Threading.Tasks;
 
-    public class MainWindow : Window
+    using Avalonia;
+    using Avalonia.Markup.Xaml;
+    using Avalonia.ReactiveUI;
+
+    using Gallery;
+    using Gallery.ViewModels;
+
+    using ReactiveUI;
+
+    public class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
         public MainWindow()
         {
@@ -12,11 +20,24 @@ namespace Gallery.Views
 #if DEBUG
             this.AttachDevTools();
 #endif
+            this.WhenActivated(disposables =>
+            {
+                Interactions.ShowDialog
+                    .RegisterHandler(async interaction =>
+                        interaction.SetOutput(await ShowDialog(interaction.Input)))
+                    .DisposeWith(disposables);
+            });
         }
 
         private void InitializeComponent()
         {
             AvaloniaXamlLoader.Load(this);
+        }
+
+        private async Task<object?> ShowDialog(DialogViewModelBase viewModel)
+        {
+            var dialog = new DialogWindow() { DataContext = viewModel };
+            return await dialog.ShowDialog<object?>(this);
         }
     }
 }
