@@ -61,14 +61,14 @@
 
         private async Task AddTag(Tag? tag)
         {
-            tag ??= (Tag?)await Interactions.ShowDialog.Handle(new AddTagsViewModel());
-            if (tag == null)
-            {
-                return;
-            }
-
             var files = SelectedItems.Select(x => x.FullPath).ToArray();
-            _dbService.AddTag((Tag)tag, files);
+
+            tag ??= (Tag?)await Interactions.ShowDialog.Handle(new AddTagsViewModel(_dbService));
+
+            if (tag != null)
+            {
+                _dbService.AddTag((Tag)tag, files);
+            }
         }
     }
 }

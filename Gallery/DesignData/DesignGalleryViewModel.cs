@@ -20,7 +20,7 @@
             };
 
             (Items[0] as TrackedFile)!.Tags.Add(new Tag("Tag", "Value"));
-            (Items[0] as TrackedFile)!.Tags.Add(new Tag("Tag"));
+            (Items[0] as TrackedFile)!.Tags.Add(new Tag("Also Tag", group: new TagGroup("Group1", "#eebbee")));
             (Items[0] as TrackedFile)!.Tags.Add(new Tag("Looooooooooooooooooooooooong tag"));
         }
 

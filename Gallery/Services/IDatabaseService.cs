@@ -9,10 +9,14 @@
 
     public interface IDatabaseService
     {
+        static readonly string DefaultTagGroup = "None";
+
         event EventHandler? OnChange;
 
         IObservable<IChangeSet<string, string>> TrackedFolders();
         IObservable<bool> IsTracked(string folderPath);
+
+        IObservable<IChangeSet<TagGroup, string>> TagGroups();
 
         IEnumerable<TrackedFile> GetFiles(IEnumerable<string> folders);
 
@@ -20,5 +24,7 @@
         void UntrackFolder(string folderPath);
 
         void AddTag(Tag tag, params string[] filePaths);
+        void CreateTagGroup(TagGroup group);
+        ////void AddTagToGroup(string tagName, string groupName);
     }
 }

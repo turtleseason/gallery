@@ -14,7 +14,7 @@
             <StackPanel Width="200">
 
                 <StackPanel.ContextMenu>
-                    <ContextMenu IsVisible="{Binding, Converter={x:Static c:GalleryConverters.IsTracked}}">
+                    <ContextMenu IsVisible="{Binding, Converter={x:Static c:Converters.IsTracked}}">
                         <MenuItem Header="Add tag..."
                                   Command="{Binding $parent[UserControl].DataContext.AddTagCommand}"/>
                     </ContextMenu>
@@ -37,10 +37,25 @@
                            Margin="0,8,0,5"/>
 
                 <ItemsControl Items="{Binding Tags}">
+                    <ItemsControl.Styles>
+                        <Style Selector="Border">
+                            <Setter Property="Background" Value="DarkMagenta"/>
+                        </Style>
+                        <Style Selector="Border.useGroupColor">
+                            <Setter Property="Background" Value="{Binding Group.Color}"/>
+                        </Style>
+                        <Style Selector="Border.useGroupColor > TextBlock">
+                            <Setter Property="Foreground"
+                                    Value="{Binding Group.Color,
+                                            Converter={x:Static c:Converters.ContrastText}}"/>
+                        </Style>
+                    </ItemsControl.Styles>
+                    
                     <ItemsControl.DataTemplates>
                         <DataTemplate DataType="{x:Type m:Tag}">
-                            <Border ToolTip.Tip="{Binding FullString}"
-                                    Background="DarkMagenta"
+                            <Border Classes.useGroupColor="{Binding Group.Color,
+                                        Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    ToolTip.Tip="{Binding FullString}"
                                     CornerRadius="5"
                                     Margin="0,5,5,0"
                                     Padding="5">

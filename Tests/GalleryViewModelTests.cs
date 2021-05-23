@@ -1,12 +1,9 @@
 ﻿namespace Tests
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
     using System.Reactive.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
 
     using DynamicData;
 
@@ -30,9 +27,9 @@
         public void SetUp()
         {
             mockFiles = new Mock<ISelectedFilesService>();
-            mockDb = new Mock<IDatabaseService>(MockBehavior.Strict);
+            mockDb = TestUtil.GetMockDatabase(true).Db;
 
-            ISourceCache<GalleryFile, string> files = new SourceCache<GalleryFile, string>(x => x.FullPath);
+            var files = new SourceCache<GalleryFile, string>(x => x.FullPath);
             files.AddOrUpdate(new TrackedFile() { FullPath = @"C:\fakepath\file1.png" });
             files.AddOrUpdate(new TrackedFile() { FullPath = @"C:\fakepath\file_2.jpg" });
             files.AddOrUpdate(new GalleryFile() { FullPath = @"C:\fakepath\filethree.png" });

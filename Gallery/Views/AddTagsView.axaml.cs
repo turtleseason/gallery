@@ -1,14 +1,18 @@
 namespace Gallery.Views
 {
-    using Avalonia;
-    using Avalonia.Controls;
     using Avalonia.Markup.Xaml;
+    using Avalonia.ReactiveUI;
 
-    public partial class AddTagsView : UserControl
+    using Gallery.ViewModels;
+
+    using ReactiveUI;
+
+    public partial class AddTagsView : ReactiveUserControl<AddTagsViewModel>
     {
         public AddTagsView()
         {
             InitializeComponent();
+            this.WhenActivated(d => { });
         }
 
         private void InitializeComponent()
