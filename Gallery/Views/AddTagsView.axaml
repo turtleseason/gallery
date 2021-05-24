@@ -3,8 +3,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:m="using:Gallery.Models"
+             xmlns:vm="using:Gallery.ViewModels"
              xmlns:c="using:Gallery.Converters"
-             mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="300"
+             mc:Ignorable="d"
              x:Class="Gallery.Views.AddTagsView">
     <StackPanel Margin="15" HorizontalAlignment="Stretch">
         <StackPanel.Styles>
@@ -15,19 +16,20 @@
                 <Setter Property="FontSize" Value="12"/>
                 <Setter Property="FontStyle" Value="Italic"/>
             </Style>
-            <Style Selector="TextBox">
+            <Style Selector="TextBox, ComboBox, AutoCompleteBox">
                 <Setter Property="Margin" Value="0,0,15,0"/>
                 <Setter Property="VerticalAlignment" Value="Top"/>
-                <Setter Property="Width" Value="120"/>
-            </Style>
-            <Style Selector="ComboBox">
                 <Setter Property="Width" Value="120"/>
             </Style>
         </StackPanel.Styles>
 
         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
             <Label>Tag name:</Label>
-            <TextBox Text="{Binding Name}"/>
+            <AutoCompleteBox Name="TagName"
+                             Text="{Binding Name}"
+                             Items="{Binding Tags}"
+                             ValueMemberBinding="{Binding Name}"
+                             FilterMode="Contains"/>
             
             <StackPanel>
                 <Label>Value:</Label>
@@ -49,6 +51,16 @@
             </ComboBox>
         </StackPanel>
 
+        <StackPanel IsVisible="{Binding SelectedGroupMismatch}"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,0,0,15">
+            <PathIcon VerticalAlignment="Bottom" Data="{StaticResource warning_regular}" Margin="0,0,5,0"/>
+            <TextBlock Text="Tag group will be updated for all &quot;"/>
+            <TextBlock Text="{Binding Name}"/>
+            <TextBlock Text="&quot; tags."/>
+        </StackPanel>
+
         <StackPanel Margin="0,0,0,15">
             <Button HorizontalAlignment="Right"
                     IsVisible="{Binding !IsAddingGroup}"
@@ -64,7 +76,7 @@
                 <Label VerticalAlignment="Center">Color:</Label>
                 <TextBox Text="{Binding Color}" MaxLength="7"/>
                 <Border CornerRadius="3" Width="30" Height="30"
-                        Background="{Binding LastValidColor}"
+                        Background="{Binding LastValidColor^}"
                         BorderBrush="Gray"
                         BorderThickness="1.5"/>
                 <Button Command="{Binding AddGroupCommand}" Margin="20,0,10,0">Add</Button>
@@ -83,4 +95,8 @@
         </StackPanel>
 
     </StackPanel>
+
+    <Design.DataContext>
+        <vm:AddTagsViewModel/>
+    </Design.DataContext>
 </UserControl>

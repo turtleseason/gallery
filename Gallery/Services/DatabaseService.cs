@@ -28,6 +28,7 @@
         private IFileSystemService _fsService;
 
         private ISourceCache<string, string> _trackedFolders;
+        private ISourceCache<Tag, string> _tags;
         private ISourceCache<TagGroup, string> _tagGroups;
 
         public DatabaseService(IFileSystemService? fsService = null)
@@ -35,10 +36,12 @@
             _fsService = fsService ?? Locator.Current.GetService<IFileSystemService>();
 
             _trackedFolders = new SourceCache<string, string>(x => x);
+            _tags = new SourceCache<Tag, string>(x => x.Name);
             _tagGroups = new SourceCache<TagGroup, string>(x => x.Name);
 
             CreateTables();
             _trackedFolders.AddOrUpdate(GetTrackedFolders());
+            _tags.AddOrUpdate(GetUniqueTags());
             _tagGroups.AddOrUpdate(GetTagGroups());
         }
 
@@ -59,6 +62,11 @@
                 .Select(x => _trackedFolders.Lookup(x.Key).HasValue)
                 .DistinctUntilChanged()  // avoid sending double "true" if the folder is tracked at time of Subscribe
                 .StartWith(_trackedFolders.Lookup(folderPath).HasValue);
+        }
+
+        public IObservable<IChangeSet<Tag, string>> Tags()
+        {
+            return _tags.Connect();
         }
 
         public IObservable<IChangeSet<TagGroup, string>> TagGroups()
@@ -304,6 +312,22 @@
             using (var conn = new SqliteConnection(ConnectionString))
             {
                 return conn.Query<string>("SELECT path FROM Folders");
+            }
+        }
+
+        private IEnumerable<Tag> GetUniqueTags()
+        {
+            string sql = @"SELECT TagInGroup.tag as Name, TagGroups.name as Name, TagGroups.color as Color
+                             FROM TagInGroup
+                            INNER JOIN TagGroups
+                               ON TagInGroup.group_id = TagGroups.group_id;
+                ";
+            using (var conn = new SqliteConnection(ConnectionString))
+            {
+                return conn.Query<Tag, TagGroup, Tag>(
+                    sql,
+                    (tag, group) => new Tag(tag.Name, group: group),
+                    splitOn: nameof(TagGroup.Name));
             }
         }
 

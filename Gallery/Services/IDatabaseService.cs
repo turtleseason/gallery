@@ -16,6 +16,7 @@
         IObservable<IChangeSet<string, string>> TrackedFolders();
         IObservable<bool> IsTracked(string folderPath);
 
+        IObservable<IChangeSet<Tag, string>> Tags();
         IObservable<IChangeSet<TagGroup, string>> TagGroups();
 
         IEnumerable<TrackedFile> GetFiles(IEnumerable<string> folders);
