@@ -62,7 +62,7 @@
 
             vm.AddTagsCommand.Execute().Subscribe();
 
-            Assert.AreEqual((result as Tag?)?.Group.Name, IDatabaseService.DefaultTagGroup);
+            Assert.AreEqual((result as Tag?)?.Group.Name, Tag.DefaultGroupName);
         }
 
         [Test]

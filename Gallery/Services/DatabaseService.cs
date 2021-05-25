@@ -83,26 +83,26 @@
         public IEnumerable<TrackedFile> GetFiles(IEnumerable<string> folders)
         {
             string querySql = @$"
-                SELECT Files.path as {nameof(TrackedFile.FullPath)},
-                       Tags.tag as {nameof(Tag.Name)},
-                       Tags.tag_value as {nameof(Tag.Value)},
-                       TagGroups.name as {nameof(TagGroup.Name)},
-                       TagGroups.color as {nameof(TagGroup.Color)}
-                  FROM Files
-                  LEFT JOIN Tags
-                    ON Tags.file_id = Files.file_id
-                  LEFT JOIN TagInGroup
-                    ON Tags.tag = TagInGroup.tag
-                  LEFT JOIN TagGroups
-                    ON TagInGroup.group_id = TagGroups.group_id
+                SELECT File.path as {nameof(TrackedFile.FullPath)},
+                       Tag.name as {nameof(Tag.Name)},
+                       FileTag.tag_value as {nameof(Tag.Value)},
+                       TagGroup.name as {nameof(TagGroup.Name)},
+                       TagGroup.color as {nameof(TagGroup.Color)}
+                  FROM File
+                  LEFT JOIN FileTag
+                    ON FileTag.file_id = File.file_id
+                  LEFT JOIN Tag
+                    ON Tag.tag_id = FileTag.tag_id
+                  LEFT JOIN TagGroup
+                    ON Tag.group_id = TagGroup.group_id
             ";
 
             if (folders.Any())
             {
                 querySql += @"
-                    INNER JOIN Folders
-                       ON Files.folder_id = Folders.folder_id
-                    WHERE Folders.path in @Folders
+                    INNER JOIN Folder
+                       ON File.folder_id = Folder.folder_id
+                    WHERE Folder.path in @Folders
                 ";
             }
 
@@ -147,9 +147,9 @@
                 return;
             }
 
-            string addFolderSql = @"INSERT INTO Folders(path) VALUES(@Path);
+            string addFolderSql = @"INSERT INTO Folder(path) VALUES(@Path);
                                     SELECT last_insert_rowid();";
-            string addFileSql = @"INSERT INTO Files(path, folder_id) VALUES(@Path, @FolderId)";
+            string addFileSql = @"INSERT INTO File(path, folder_id) VALUES(@Path, @FolderId)";
 
             IEnumerable<GalleryFile>? files = _fsService.GetFiles(folderPath);
             if (files == null)
@@ -176,7 +176,7 @@
         /// (If the folder is not tracked, nothing happens.)
         public void UntrackFolder(string folderPath)
         {
-            string deleteFolderSql = @"DELETE FROM Folders WHERE path = @Path";
+            string deleteFolderSql = @"DELETE FROM Folder WHERE path = @Path";
 
             using (var conn = new SqliteConnection(ConnectionString))
             {
@@ -187,25 +187,27 @@
             OnChange?.Invoke(this, new EventArgs());
         }
 
+        /// Adds a tag to the given files, skipping any untracked files.
         /// Skips duplicate tags (where the given file already has a tag with the same name and value).
-        /// Also skips any untracked files.
         ///
-        /// If the given Tag object's group doesn't match the group associated with that tag in the database,
-        /// it will update the group in the database (affecting all occurrences of that tag).
+        /// If the given Tag's Group doesn't match the group associated with that tag in the database,
+        /// the group in the database will be updated (affecting all occurrences of that tag).
         public void AddTag(Tag tag, params string[] filePaths)
         {
             // May or may not want to keep the update-on-conflict behavior? It's convenient but feels kind of illogical
             string insertSql = @"
-                INSERT OR IGNORE INTO Tags(file_id, tag, tag_value)
-                    SELECT file_id, @Name, @Value
-                      FROM Files
-                     WHERE path in @Paths;
-
-                INSERT INTO TagInGroup(tag, group_id)
+                /* Set tag group for tag */
+                INSERT INTO Tag(name, group_id)
                     SELECT @Name, group_id
-                      FROM TagGroups
+                      FROM TagGroup
                      WHERE name = @Group
-                    ON CONFLICT(tag) DO UPDATE SET group_id = excluded.group_id;
+                    ON CONFLICT(name) DO UPDATE SET group_id = excluded.group_id;
+
+                /* Set tag for file */
+                INSERT OR IGNORE INTO FileTag(file_id, tag_id, tag_value)
+                    SELECT File.file_id, Tag.tag_id, @Value
+                      FROM File, Tag
+                     WHERE File.path in @Paths AND Tag.name = @Name;
             ";
 
             var parameters = new
@@ -213,7 +215,7 @@
                 Paths = filePaths,
                 tag.Name,
                 tag.Value,
-                Group = tag.Group.Name ?? IDatabaseService.DefaultTagGroup,
+                Group = tag.Group.Name ?? Tag.DefaultGroupName,
             };
 
             using (var conn = new SqliteConnection(ConnectionString))
@@ -221,13 +223,14 @@
                 conn.Execute(insertSql, parameters);
             }
 
+            _tags.AddOrUpdate(tag);
             OnChange?.Invoke(this, new EventArgs());
         }
 
         // Can be used to update the color; may want to make a separate method to edit/rename groups instead?
         public void CreateTagGroup(TagGroup group)
         {
-            string insertSql = @"INSERT INTO TagGroups(name, color)
+            string insertSql = @"INSERT INTO TagGroup(name, color)
                                     VALUES(@Name, @Color)
                                     ON CONFLICT(name) DO UPDATE SET color = excluded.color;";
 
@@ -259,46 +262,43 @@
         /// Create the database file and tables if they don't already exist.
         private void CreateTables()
         {
-            // Alternately, TagInGroup could be renamed to Tags and store a tag_id,
-            // while Tags (renamed - to FileTags or something?) and TagGroups store the id
-            // instead of the tag text itself?
-            // Has the advantage of storing (usually) smaller ints instead of strings repeatedly
-            // (and it might be easier to rename tags w/o updating a bunch of references)
             string createTablesSql = @$"
-                CREATE TABLE IF NOT EXISTS Folders (
+                CREATE TABLE IF NOT EXISTS Folder (
                     folder_id INTEGER PRIMARY KEY NOT NULL,
                     path VARCHAR UNIQUE NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS Files (
+                CREATE TABLE IF NOT EXISTS File (
                     file_id INTEGER PRIMARY KEY NOT NULL,
                     path VARCHAR UNIQUE NOT NULL,
                     folder_id INTEGER NOT NULL,
                     thumbnail VARCHAR,
-                    FOREIGN KEY (folder_id) REFERENCES Folders(folder_id) ON DELETE CASCADE
+                    FOREIGN KEY (folder_id) REFERENCES Folder(folder_id) ON DELETE CASCADE
                 );
 
-                CREATE TABLE IF NOT EXISTS Tags (
-                    file_id INTEGER NOT NULL,
-                    tag VARCHAR NOT NULL,
-                    tag_value VARCHAR,
-                    UNIQUE (file_id, tag, tag_value),
-                    FOREIGN KEY (file_id) REFERENCES Files(file_id) ON DELETE CASCADE
-                );
-
-                CREATE TABLE IF NOT EXISTS TagGroups (
+                CREATE TABLE IF NOT EXISTS TagGroup (
                     group_id INTEGER PRIMARY KEY NOT NULL,
                     name VARCHAR UNIQUE NOT NULL,
                     color VARCHAR
                 );
 
-                CREATE TABLE IF NOT EXISTS TagInGroup (
-                    tag VARCHAR UNIQUE NOT NULL,
+                CREATE TABLE IF NOT EXISTS Tag (
+                    tag_id INTEGER PRIMARY KEY NOT NULL,
+                    name VARCHAR UNIQUE NOT NULL,
                     group_id INTEGER NOT NULL,
-                    FOREIGN KEY (group_id) REFERENCES TagGroups(group_id) ON DELETE CASCADE
+                    FOREIGN KEY (group_id) REFERENCES TagGroup(group_id) ON DELETE CASCADE
                 );
 
-                INSERT OR IGNORE INTO TagGroups(name) VALUES('{IDatabaseService.DefaultTagGroup}');
+                CREATE TABLE IF NOT EXISTS FileTag (
+                    file_id INTEGER NOT NULL,
+                    tag_id INTEGER NOT NULL,
+                    tag_value VARCHAR,
+                    UNIQUE (file_id, tag_id, tag_value),
+                    FOREIGN KEY (file_id) REFERENCES File(file_id) ON DELETE CASCADE
+                    FOREIGN KEY (tag_id) REFERENCES Tag(tag_id) ON DELETE CASCADE
+                );
+
+                INSERT OR IGNORE INTO TagGroup(name) VALUES('{Tag.DefaultGroupName}');
             ";
 
             using (var conn = new SqliteConnection(ConnectionString))
@@ -311,16 +311,16 @@
         {
             using (var conn = new SqliteConnection(ConnectionString))
             {
-                return conn.Query<string>("SELECT path FROM Folders");
+                return conn.Query<string>("SELECT path FROM Folder");
             }
         }
 
         private IEnumerable<Tag> GetUniqueTags()
         {
-            string sql = @"SELECT TagInGroup.tag as Name, TagGroups.name as Name, TagGroups.color as Color
-                             FROM TagInGroup
-                            INNER JOIN TagGroups
-                               ON TagInGroup.group_id = TagGroups.group_id;
+            string sql = @"SELECT Tag.name as Name, TagGroup.name as Name, TagGroup.color as Color
+                             FROM Tag
+                            INNER JOIN TagGroup
+                               ON Tag.group_id = TagGroup.group_id;
                 ";
             using (var conn = new SqliteConnection(ConnectionString))
             {
@@ -335,7 +335,7 @@
         {
             using (var conn = new SqliteConnection(ConnectionString))
             {
-                return conn.Query<TagGroup>("SELECT name as Name, color as Color from TagGroups");
+                return conn.Query<TagGroup>("SELECT name as Name, color as Color from TagGroup");
             }
         }
     }

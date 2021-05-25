@@ -88,11 +88,11 @@ namespace Tests
 
             database.TrackFolder(folderPath);
 
-            var folders = conn.Query<string>("SELECT path FROM Folders").ToList();
+            var folders = conn.Query<string>("SELECT path FROM Folder").ToList();
             Assert.AreEqual(folders.Count, 1);
             Assert.Contains(folderPath, folders);
 
-            var files = conn.Query<string>("SELECT path FROM Files").ToList();
+            var files = conn.Query<string>("SELECT path FROM File").ToList();
             var expectedFiles = GetMockFilePaths(folderPath);
             Assert.That(files, Is.EquivalentTo(expectedFiles));
         }
@@ -108,15 +108,15 @@ namespace Tests
 
             database.UntrackFolder(untrackedPath);
 
-            var folders = conn.Query<string>("SELECT path FROM Folders").ToList();
+            var folders = conn.Query<string>("SELECT path FROM Folder").ToList();
             Assert.AreEqual(folders.Count, 1);
             Assert.Contains(trackedPath, folders);
 
-            var untrackedFiles = conn.Query<string>("SELECT path FROM Files WHERE path = @Path", new { Path = untrackedPath }).ToList();
+            var untrackedFiles = conn.Query<string>("SELECT path FROM File WHERE path = @Path", new { Path = untrackedPath }).ToList();
             Assert.Zero(untrackedFiles.Count);
 
             // Make sure *only* files associated with the untracked folder are deleted
-            var allFiles = conn.Query<string>("SELECT path FROM Files").ToList();
+            var allFiles = conn.Query<string>("SELECT path FROM File").ToList();
             Assert.That(allFiles, Is.EquivalentTo(GetMockFilePaths(trackedPath)));
         }
 

@@ -17,7 +17,7 @@
     {
         public static readonly TagGroup[] TestTagGroups =
         {
-            new TagGroup(IDatabaseService.DefaultTagGroup),
+            new TagGroup(Tag.DefaultGroupName),
             new TagGroup("Group", "#ff66ff"),
         };
 
@@ -29,6 +29,9 @@
             var tagGroups = new SourceCache<TagGroup, string>(x => x.Name);
             tagGroups.AddOrUpdate(TestTagGroups);
             mockDb.Setup(mock => mock.TagGroups()).Returns(tagGroups.Connect());
+
+            var tags = new SourceCache<Tag, string>(x => x.Name);
+            mockDb.Setup(mock => mock.Tags()).Returns(tags.Connect());
 
             return new TestDatabaseUtils { Db = mockDb, TagGroups = tagGroups };
         }

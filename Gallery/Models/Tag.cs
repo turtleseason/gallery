@@ -1,14 +1,14 @@
 ﻿namespace Gallery.Models
 {
-    using Gallery.Services;
-
     public readonly struct Tag
     {
+        public static readonly string DefaultGroupName = "None";
+
         public Tag(string name, string? value = null, TagGroup? group = null)
         {
             Name = name;
             Value = value;
-            Group = group ?? new TagGroup(IDatabaseService.DefaultTagGroup);
+            Group = group ?? new TagGroup(DefaultGroupName);
         }
 
         /// Name should always be initialized to a non-null (and non-empty/whitespace) value

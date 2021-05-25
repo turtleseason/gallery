@@ -9,8 +9,6 @@
 
     public interface IDatabaseService
     {
-        static readonly string DefaultTagGroup = "None";
-
         event EventHandler? OnChange;
 
         IObservable<IChangeSet<string, string>> TrackedFolders();
