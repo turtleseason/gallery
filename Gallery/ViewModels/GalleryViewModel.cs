@@ -31,7 +31,7 @@
             _sfService = sfService ?? Locator.Current.GetService<ISelectedFilesService>();
             _dbService = dbService ?? Locator.Current.GetService<IDatabaseService>();
 
-            IDisposable subscription = _sfService.Connect()
+            IDisposable disposable = _sfService.Connect()
                 .Sort(SortExpressionComparer<GalleryFile>.Ascending(file => file.FullPath))  // todo: sort in SFS (so it applies everywhere)
                 .Bind(out _items)
                 .Subscribe();
@@ -44,7 +44,7 @@
                     return Unit.Default;
                 });
 
-            this.WhenActivated((CompositeDisposable disposables) => subscription.DisposeWith(disposables));
+            this.WhenActivated((CompositeDisposable disposables) => disposable.DisposeWith(disposables));
         }
 
         // Need to declare parameterless constructor explicitly for the XAML designer preview to work

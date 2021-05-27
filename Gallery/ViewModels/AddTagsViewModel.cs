@@ -20,7 +20,7 @@
 
     public class AddTagsViewModel : DialogViewModelBase, IActivatableViewModel
     {
-        private static readonly Regex HexColorRegex = new("^#[a-fA-F0-9]{6}$");
+        private static readonly Regex _hexColorRegex = new("^#[a-fA-F0-9]{6}$");
 
         private readonly IDatabaseService _dbService;
 
@@ -52,19 +52,19 @@
                 x => x.IsAddingGroup,
                 x => x.GroupName,
                 x => x.Color,
-                (isAddingGroup, groupName, color) => isAddingGroup && !string.IsNullOrWhiteSpace(groupName) && HexColorRegex.IsMatch(color));
+                (isAddingGroup, groupName, color) => isAddingGroup && !string.IsNullOrWhiteSpace(groupName) && _hexColorRegex.IsMatch(color));
 
             AddTagsCommand = ReactiveCommand.Create(AddTagsAndClose, canAddTags);
             AddGroupCommand = ReactiveCommand.Create(AddGroup, canAddGroup);
 
-            LastValidColor = this.WhenAnyValue(x => x.Color).Where(color => HexColorRegex.IsMatch(color));
+            LastValidColor = this.WhenAnyValue(x => x.Color).Where(color => _hexColorRegex.IsMatch(color));
 
             var tags = _dbService.Tags();
             _tagsCache = tags.AsObservableCache();
 
-            var tagSubscription = tags.Bind(out _tags).Subscribe();
+            var disposable_tags = tags.Bind(out _tags).Subscribe();
 
-            var tagGroupSubscription = _dbService.TagGroups()
+            var disposable_tagGroups = _dbService.TagGroups()
                 .Bind(out _tagGroups)
                 .Subscribe();
 
@@ -75,8 +75,8 @@
 
             this.WhenActivated(disposables =>
             {
-                tagSubscription.DisposeWith(disposables);
-                tagGroupSubscription.DisposeWith(disposables);
+                disposable_tags.DisposeWith(disposables);
+                disposable_tagGroups.DisposeWith(disposables);
             });
         }
 

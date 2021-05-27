@@ -12,6 +12,7 @@
     <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers.ReadabilityRules">
         <Rule Id="SA1101"  Action="None" />             <!-- Prefix local calls with this -->
         <Rule Id="SA1128"  Action="None" />             <!-- Put constructor initializers on their own line -->
+        <Rule Id="SA1136"  Action="None" />             <!-- Enum values should be on separate lines -->
     </Rules>
     
     <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers.OrderingRules">

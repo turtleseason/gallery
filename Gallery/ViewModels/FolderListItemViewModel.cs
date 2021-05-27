@@ -22,6 +22,8 @@
 
         private bool _hasLoadedChildren = false;
 
+        private bool _isExpanded = false;
+
         public FolderListItemViewModel(DirectoryInfo directoryInfo, IDatabaseService? dbService = null, IFileSystemService? fsService = null)
         {
             _fsService = fsService ?? Locator.Current.GetService<IFileSystemService>();
@@ -51,19 +53,13 @@
         public DirectoryInfo DirectoryInfo { get; }
 
         public string Name => DirectoryInfo.Name;
-
         public string FullPath => DirectoryInfo.FullName;
 
         public ObservableCollection<FolderListItemViewModel> Children { get; }
 
         public IObservable<bool> IsTracked { get; init; }
 
-        private bool _isExpanded = false;
-        public bool IsExpanded
-        {
-            get => _isExpanded;
-            set => this.RaiseAndSetIfChanged(ref _isExpanded, value);
-        }
+        public bool IsExpanded { get => _isExpanded; set => this.RaiseAndSetIfChanged(ref _isExpanded, value); }
 
         public void LoadChildren()
         {

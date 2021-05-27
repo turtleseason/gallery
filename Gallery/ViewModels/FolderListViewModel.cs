@@ -53,7 +53,7 @@
 
             selectedItemsObservable.Subscribe(changes => UpdateSelectedFolders(changes));
 
-            IDisposable subscription = trackedFoldersObservable.ObserveOn(RxApp.MainThreadScheduler)
+            IDisposable disposable = trackedFoldersObservable.ObserveOn(RxApp.MainThreadScheduler)
                 .Bind(out _trackedFolders)
                 .Subscribe();
 
@@ -61,7 +61,7 @@
 
             this.WhenActivated((CompositeDisposable disposables) =>
             {
-                subscription.DisposeWith(disposables);
+                disposable.DisposeWith(disposables);
                 TrackSelectedFoldersCommand.DisposeWith(disposables);
             });
         }
