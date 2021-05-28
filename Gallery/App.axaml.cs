@@ -17,6 +17,7 @@ namespace Gallery
         public override void OnFrameworkInitializationCompleted()
         {
             AppBootstrapper.RegisterDependencies();
+            AppBootstrapper.RegisterViews();
 
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {

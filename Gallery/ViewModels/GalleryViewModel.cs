@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.ObjectModel;
+    using System.Diagnostics;
     using System.Linq;
     using System.Reactive;
     using System.Reactive.Disposables;
@@ -19,45 +20,53 @@
 
     using Splat;
 
-    public class GalleryViewModel : ViewModelBase, IActivatableViewModel
+    public class GalleryViewModel : ViewModelBase, IRoutableViewModel
     {
         private readonly ISelectedFilesService _sfService;
         private readonly IDatabaseService _dbService;
 
-        private readonly ReadOnlyObservableCollection<GalleryFile> _items;
+        private ReadOnlyObservableCollection<GalleryFile>? _items;
 
-        public GalleryViewModel(ISelectedFilesService? sfService = null, IDatabaseService? dbService = null)
+        public GalleryViewModel(IScreen screen, ISelectedFilesService? sfService = null, IDatabaseService? dbService = null)
         {
+            HostScreen = screen;
+
             _sfService = sfService ?? Locator.Current.GetService<ISelectedFilesService>();
             _dbService = dbService ?? Locator.Current.GetService<IDatabaseService>();
-
-            IDisposable disposable = _sfService.Connect()
-                .Sort(SortExpressionComparer<GalleryFile>.Ascending(file => file.FullPath))  // todo: sort in SFS (so it applies everywhere)
-                .Bind(out _items)
-                .Subscribe();
 
             SelectedItems = new ObservableCollection<GalleryFile>();
 
             AddTagCommand = ReactiveCommand.CreateFromTask<Tag?, Unit>(async tag =>
-                {
-                    await AddTag(tag);
-                    return Unit.Default;
-                });
+            {
+                await AddTag(tag);
+                return Unit.Default;
+            });
 
-            this.WhenActivated((CompositeDisposable disposables) => disposable.DisposeWith(disposables));
+            this.WhenActivated((CompositeDisposable disposables) =>
+            {
+                _sfService.Connect()
+                .Sort(SortExpressionComparer<GalleryFile>.Ascending(file => file.FullPath))  // todo: sort in SFS (so it applies everywhere)
+                .Bind(out _items)
+                .Subscribe()
+                .DisposeWith(disposables);
+
+                this.RaisePropertyChanged(nameof(Items));
+            });
         }
 
         // Need to declare parameterless constructor explicitly for the XAML designer preview to work
-        public GalleryViewModel() : this(null, null)
+        public GalleryViewModel() : this(null!, null, null)
         { }
 
-        public ViewModelActivator Activator { get; } = new ViewModelActivator();
+        public string? UrlPathSegment => "Gallery";
 
-        public ReadOnlyObservableCollection<GalleryFile> Items => _items;
-
-        public ObservableCollection<GalleryFile> SelectedItems { get; }
+        public IScreen HostScreen { get; }
 
         public ReactiveCommand<Tag?, Unit> AddTagCommand { get; }
+
+        public ReadOnlyObservableCollection<GalleryFile>? Items => _items;
+
+        public ObservableCollection<GalleryFile> SelectedItems { get; }
 
         private async Task AddTag(Tag? tag)
         {

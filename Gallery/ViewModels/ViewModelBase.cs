@@ -1,12 +1,9 @@
 namespace Gallery.ViewModels
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Text;
-
     using ReactiveUI;
 
-    public class ViewModelBase : ReactiveObject
+    public class ViewModelBase : ReactiveObject, IActivatableViewModel
     {
+        public ViewModelActivator Activator { get; } = new ViewModelActivator();
     }
 }

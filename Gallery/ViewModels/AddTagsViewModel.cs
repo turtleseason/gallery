@@ -18,7 +18,7 @@
 
     using Splat;
 
-    public class AddTagsViewModel : DialogViewModelBase, IActivatableViewModel
+    public class AddTagsViewModel : DialogViewModelBase
     {
         private static readonly Regex _hexColorRegex = new("^#[a-fA-F0-9]{6}$");
 
@@ -81,8 +81,6 @@
         }
 
         public AddTagsViewModel() : this(null) { }
-
-        public ViewModelActivator Activator => new ViewModelActivator();
 
         public ReactiveCommand<Unit, Unit> AddTagsCommand { get; }
         public ReactiveCommand<Unit, Unit> AddGroupCommand { get; }

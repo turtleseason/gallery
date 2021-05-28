@@ -2,14 +2,18 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:rxui="http://reactiveui.net"
+             xmlns:local="using:Gallery"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Gallery.Views.MainShellView">
     <DockPanel>
         <ContentControl DockPanel.Dock="Top"
                         Content="{Binding Header}"/>
+        
         <ContentControl DockPanel.Dock="Left" 
                         Content="{Binding FolderList}"
                         Width="300"/>
-        <ContentControl Content="{Binding PrimaryView}"/>
+        
+        <rxui:RoutedViewHost Router="{Binding Router}" PageTransition="{x:Null}"/>
     </DockPanel>
 </UserControl>

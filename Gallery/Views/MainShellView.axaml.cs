@@ -1,14 +1,19 @@
 namespace Gallery.Views
 {
-    using Avalonia;
-    using Avalonia.Controls;
+    using System;
     using Avalonia.Markup.Xaml;
+    using Avalonia.ReactiveUI;
 
-    public class MainShellView : UserControl
+    using Gallery.ViewModels;
+
+    using ReactiveUI;
+
+    public class MainShellView : ReactiveUserControl<MainShellViewModel>
     {
         public MainShellView()
         {
             InitializeComponent();
+            this.WhenActivated(_ => ViewModel?.GalleryCommand.Execute().Subscribe());
         }
 
         private void InitializeComponent()

@@ -1,6 +1,12 @@
 ﻿namespace Gallery
 {
+    using System.Reflection;
+
     using Gallery.Services;
+    using Gallery.ViewModels;
+    using Gallery.Views;
+
+    using ReactiveUI;
 
     using Splat;
 
@@ -18,6 +24,15 @@
             Locator.CurrentMutable.RegisterConstant(new DatabaseService(), typeof(IDatabaseService));
 
             Locator.CurrentMutable.RegisterConstant(new SelectedFilesService(), typeof(ISelectedFilesService));
+        }
+
+        /// Registers views to view models for ReactiveUI routing.
+        public static void RegisterViews()
+        {
+            Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetExecutingAssembly());
+
+            ////Locator.CurrentMutable.Register(() => new SearchView(), typeof(IViewFor<SearchViewModel>));
+            ////Locator.CurrentMutable.Register(() => new GalleryView(), typeof(IViewFor<GalleryViewModel>));
         }
     }
 }

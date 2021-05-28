@@ -1,40 +1,34 @@
 ﻿namespace Gallery.ViewModels
 {
+    using System;
+    using System.Diagnostics;
     using System.Reactive;
+    using System.Reactive.Linq;
 
     using ReactiveUI;
 
-    public class MainShellViewModel : ViewModelBase
+    public class MainShellViewModel : ViewModelBase, IScreen
     {
-        private ViewModelBase _primaryView;
-
         public MainShellViewModel()
         {
-            _primaryView = new GalleryViewModel();
+            GalleryCommand = ReactiveCommand.CreateFromObservable<Unit, IRoutableViewModel>(
+                _ => Router.Navigate.Execute(new GalleryViewModel(this)));
+
+            SearchCommand = ReactiveCommand.CreateFromObservable<Unit, IRoutableViewModel>(
+                _ => Router.Navigate.Execute(new SearchViewModel(this)));
 
             Header = new HeaderViewModel();
             FolderList = new FolderListViewModel();
-
-            SearchCommand = ReactiveCommand.Create<Unit, Unit>(vm =>
-            {
-                PrimaryView = new SearchViewModel();
-                return Unit.Default;
-            });
-
-            GalleryCommand = ReactiveCommand.Create<Unit, Unit>(vm =>
-            {
-                PrimaryView = new GalleryViewModel();
-                return Unit.Default;
-            });
         }
 
-        // todo: actual navigation lol
-        public ReactiveCommand<Unit, Unit> SearchCommand { get; }
-        public ReactiveCommand<Unit, Unit> GalleryCommand { get; }
+        public RoutingState Router { get; } = new RoutingState();
+
+        public ReactiveCommand<Unit, IRoutableViewModel> SearchCommand { get; }
+        public ReactiveCommand<Unit, IRoutableViewModel> GalleryCommand { get; }
+
+        public ReactiveCommand<Unit, Unit> BackCommand => Router.NavigateBack;
 
         public HeaderViewModel Header { get; }
-
-        public ViewModelBase PrimaryView { get => _primaryView; private set => this.RaiseAndSetIfChanged(ref _primaryView, value); }
 
         public FolderListViewModel FolderList { get; }
     }

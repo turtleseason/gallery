@@ -19,7 +19,7 @@
 
     using Splat;
 
-    public class FolderListViewModel : ViewModelBase, IActivatableViewModel
+    public class FolderListViewModel : ViewModelBase
     {
         private IDatabaseService _dbService;
         private IFileSystemService _fsService;
@@ -68,8 +68,6 @@
 
         public FolderListViewModel() : this(null, null, null)  // for XAML designer
         { }
-
-        public ViewModelActivator Activator { get; } = new ViewModelActivator();
 
         public ObservableCollection<FolderListItemViewModel> Items { get; }
         public ObservableCollection<FolderListItemViewModel> SelectedItems { get; }

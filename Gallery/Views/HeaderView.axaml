@@ -11,7 +11,7 @@
             Search
         </Button>
         <Button DockPanel.Dock="Right"
-                Command="{Binding $parent[v:MainShellView].DataContext.GalleryCommand}">
+                Command="{Binding $parent[v:MainShellView].DataContext.BackCommand}">
             Back
         </Button>
         <Label VerticalAlignment="Center">Header :O</Label>
