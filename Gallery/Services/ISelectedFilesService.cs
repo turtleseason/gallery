@@ -1,6 +1,7 @@
 ﻿namespace Gallery.Services
 {
     using System;
+    using System.Collections.Generic;
 
     using DynamicData;
 
@@ -11,6 +12,8 @@
         IObservable<IChangeSet<GalleryFile, string>> Connect();
 
         void LoadFileCollection(FileCollection collection, bool ignoreSourceFolders = false);
+
+        void SetSearchParameters(IList<ISearchParameter> parameters);
 
         void AddDirectory(string path);
 

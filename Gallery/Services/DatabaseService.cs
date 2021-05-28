@@ -19,6 +19,7 @@
     using Splat;
 
     // Todo: Handling SQL exceptions?
+    //       Consider splitting into smaller classes? (maybe split by resource type?)
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
         "Performance",
         "CA1822:Mark members as static",
@@ -28,7 +29,8 @@
         private IFileSystemService _fsService;
 
         private ISourceCache<string, string> _trackedFolders;
-        private ISourceCache<Tag, string> _tags;
+        private ISourceCache<Tag, Tag> _tags;
+        private ISourceCache<Tag, string> _tagNames;
         private ISourceCache<TagGroup, string> _tagGroups;
 
         public DatabaseService(IFileSystemService? fsService = null)
@@ -36,12 +38,14 @@
             _fsService = fsService ?? Locator.Current.GetService<IFileSystemService>();
 
             _trackedFolders = new SourceCache<string, string>(x => x);
-            _tags = new SourceCache<Tag, string>(x => x.Name);
+            _tags = new SourceCache<Tag, Tag>(x => new Tag(x.Name, x.Value));
+            _tagNames = new SourceCache<Tag, string>(x => x.Name);
             _tagGroups = new SourceCache<TagGroup, string>(x => x.Name);
 
             CreateTables();
             _trackedFolders.AddOrUpdate(GetTrackedFolders());
-            _tags.AddOrUpdate(GetUniqueTags());
+            _tags.AddOrUpdate(GetTags());
+            _tagNames.AddOrUpdate(GetTagNames());
             _tagGroups.AddOrUpdate(GetTagGroups());
         }
 
@@ -53,7 +57,7 @@
 
         public IObservable<IChangeSet<string, string>> TrackedFolders()
         {
-            return _trackedFolders.Connect();
+            return _trackedFolders.Connect().StartWithEmpty();
         }
 
         public IObservable<bool> IsTracked(string folderPath)
@@ -64,13 +68,23 @@
                 .StartWith(_trackedFolders.Lookup(folderPath).HasValue);
         }
 
-        public IObservable<IChangeSet<Tag, string>> Tags()
+        /// Returns an updating set of all the unique tags in the database, including values.
+        public IObservable<IChangeSet<Tag, Tag>> Tags()
         {
-            return _tags.Connect();
+            return _tags.Connect().StartWithEmpty();
+        }
+
+        /// Returns an updating set of all the unique tag names in the database, ignoring values.
+        /// (May be somewhat redundant now; keeping it for convenience atm,
+        /// but any using class could replace it with Tags + a little custom filtering)
+        public IObservable<IChangeSet<Tag, string>> TagNames()
+        {
+            return _tagNames.Connect().StartWithEmpty();
         }
 
         public IObservable<IChangeSet<TagGroup, string>> TagGroups()
         {
+            // Doesn't need to start with empty since the default group should always exist
             return _tagGroups.Connect();
         }
 
@@ -194,6 +208,11 @@
         /// the group in the database will be updated (affecting all occurrences of that tag).
         public void AddTag(Tag tag, params string[] filePaths)
         {
+            if (filePaths.Length == 0)
+            {
+                return;
+            }
+
             // May or may not want to keep the update-on-conflict behavior? It's convenient but feels kind of illogical
             string insertSql = @"
                 /* Set tag group for tag */
@@ -224,6 +243,7 @@
             }
 
             _tags.AddOrUpdate(tag);
+            _tagNames.AddOrUpdate(new Tag(tag.Name, group: tag.Group));
             OnChange?.Invoke(this, new EventArgs());
         }
 
@@ -242,22 +262,6 @@
             _tagGroups.AddOrUpdate(group);
             OnChange?.Invoke(this, new EventArgs());
         }
-
-        ////public void AddTagToGroup(string tag, string groupName)
-        ////{
-        ////    // also allow update?
-        ////    string insertSql = @"INSERT INTO TagInGroup(group_id, tag)
-        ////                         SELECT TagGroups.group_id, @Tag
-        ////                           FROM TagGroups
-        ////                          WHERE TagGroups.name = @Name";
-
-        ////    using (var conn = new SqliteConnection(ConnectionString))
-        ////    {
-        ////        conn.Execute(insertSql, new { Tag = tag, Name = groupName });
-        ////    }
-
-        ////    OnChange?.Invoke(this, new EventArgs());
-        ////}
 
         /// Create the database file and tables if they don't already exist.
         private void CreateTables()
@@ -315,7 +319,29 @@
             }
         }
 
-        private IEnumerable<Tag> GetUniqueTags()
+        private IEnumerable<Tag> GetTags()
+        {
+            string sql = @"SELECT DISTINCT Tag.name as Name,
+                                           FileTag.tag_value as Value,
+                                           TagGroup.name as Name,
+                                           TagGroup.color as Color
+                             FROM FileTag
+                            INNER JOIN Tag
+                               ON FileTag.tag_id = Tag.tag_id
+                            INNER JOIN TagGroup
+                               ON Tag.group_id = TagGroup.group_id
+            ";
+
+            using (var conn = new SqliteConnection(ConnectionString))
+            {
+                return conn.Query<Tag, TagGroup, Tag>(
+                    sql,
+                    (tag, tagGroup) => new Tag(tag.Name, tag.Value, tagGroup),
+                    splitOn: nameof(TagGroup.Name));
+            }
+        }
+
+        private IEnumerable<Tag> GetTagNames()
         {
             string sql = @"SELECT Tag.name as Name, TagGroup.name as Name, TagGroup.color as Color
                              FROM Tag

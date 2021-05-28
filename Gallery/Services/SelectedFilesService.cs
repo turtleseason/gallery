@@ -59,6 +59,13 @@
             _selectedFiles = collection;
         }
 
+        /// (Temp?)
+        public void SetSearchParameters(IList<ISearchParameter> parameters)
+        {
+            _selectedFiles.Parameters = parameters;
+            PopulateFilesCollection();
+        }
+
         /// (Temp?) Adds the given folder to the current source folder(s) [doesn't check for duplicates].
         public void AddDirectory(string path)
         {
@@ -79,7 +86,9 @@
         {
             _files.Clear();
 
-            _files.AddOrUpdate(_dbService.GetFiles(_selectedFiles.SourceFolders));
+            var allFiles = _dbService.GetFiles(_selectedFiles.SourceFolders);
+
+            _files.AddOrUpdate(allFiles.Where(MatchesAllParameters));
 
             if (_selectedFiles.IncludeUntracked)
             {
@@ -91,10 +100,25 @@
                     if (files != null)
                     {
                         // Skip files that are already tracked & in the collection
-                        _files.AddOrUpdate(files.Where(file => !_files.Lookup(file.FullPath).HasValue));
+                        _files.AddOrUpdate(files
+                            .Where(file => !_files.Lookup(file.FullPath).HasValue)
+                            .Where(MatchesAllParameters));
                     }
                 }
             }
+        }
+
+        private bool MatchesAllParameters(GalleryFile file)
+        {
+            foreach (ISearchParameter param in _selectedFiles.Parameters)
+            {
+                if (!param.Matches(file))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void OnDatabaseChanged(object? sender, EventArgs e)

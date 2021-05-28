@@ -39,32 +39,9 @@
                 <ItemsControl Items="{Binding Tags}">
                     <ItemsControl.Styles>
                         <Style Selector="Border">
-                            <Setter Property="Background" Value="DarkMagenta"/>
-                        </Style>
-                        <Style Selector="Border.useGroupColor">
-                            <Setter Property="Background" Value="{Binding Group.Color}"/>
-                        </Style>
-                        <Style Selector="Border.useGroupColor > TextBlock">
-                            <Setter Property="Foreground"
-                                    Value="{Binding Group.Color,
-                                            Converter={x:Static c:Converters.ContrastText}}"/>
+                            <Setter Property="Margin" Value="0,5,5,0"/>
                         </Style>
                     </ItemsControl.Styles>
-                    
-                    <ItemsControl.DataTemplates>
-                        <DataTemplate DataType="{x:Type m:Tag}">
-                            <Border Classes.useGroupColor="{Binding Group.Color,
-                                        Converter={x:Static ObjectConverters.IsNotNull}}"
-                                    ToolTip.Tip="{Binding FullString}"
-                                    CornerRadius="5"
-                                    Margin="0,5,5,0"
-                                    Padding="5">
-                                <TextBlock Text="{Binding FullString}"
-                                           TextTrimming="CharacterEllipsis"/>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.DataTemplates>
-
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel/>

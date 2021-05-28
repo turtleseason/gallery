@@ -10,10 +10,10 @@ namespace Gallery.Models
     // (Should other classes be able to set the collections, or just modify them directly?
     public class FileCollection
     {
-        public FileCollection(IEnumerable<string>? sourceFolders = null, IDictionary<string, string>? parameters = null)
+        public FileCollection(IEnumerable<string>? sourceFolders = null, IEnumerable<ISearchParameter>? parameters = null)
         {
             SourceFolders = sourceFolders != null ? new List<string>(sourceFolders) : new List<string>();
-            Parameters = parameters != null ? new Dictionary<string, string>(parameters) : new Dictionary<string, string>();
+            Parameters = parameters != null ? new List<ISearchParameter>(parameters) : new List<ISearchParameter>();
         }
 
         public bool IncludeUntracked { get; set; } = true;
@@ -25,6 +25,6 @@ namespace Gallery.Models
         // (e.g. display folders' contents in the order in which the folders were selected?)
         public IList<string> SourceFolders { get; set; }
 
-        public IDictionary<string, string> Parameters { get; set; }
+        public IList<ISearchParameter> Parameters { get; set; }
     }
 }

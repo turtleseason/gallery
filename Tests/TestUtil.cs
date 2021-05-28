@@ -31,7 +31,7 @@
             mockDb.Setup(mock => mock.TagGroups()).Returns(tagGroups.Connect());
 
             var tags = new SourceCache<Tag, string>(x => x.Name);
-            mockDb.Setup(mock => mock.Tags()).Returns(tags.Connect());
+            mockDb.Setup(mock => mock.TagNames()).Returns(tags.Connect());
 
             return new TestDatabaseUtils { Db = mockDb, TagGroups = tagGroups };
         }

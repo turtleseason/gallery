@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:v="clr-namespace:Gallery.Views;assembly=Gallery"
+             mc:Ignorable="d" Height="50" d:DesignWidth="500"
+             x:Class="Gallery.Views.HeaderView">
+    <DockPanel HorizontalAlignment="Stretch">
+        <Button DockPanel.Dock="Right"
+                Command="{Binding $parent[v:MainShellView].DataContext.SearchCommand}">
+            Search
+        </Button>
+        <Button DockPanel.Dock="Right"
+                Command="{Binding $parent[v:MainShellView].DataContext.GalleryCommand}">
+            Back
+        </Button>
+        <Label VerticalAlignment="Center">Header :O</Label>
+    </DockPanel>
+</UserControl>

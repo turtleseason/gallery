@@ -5,10 +5,11 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Gallery.Views.MainShellView">
     <DockPanel>
-        <ContentControl 
-            DockPanel.Dock="Left" 
-            Content="{Binding FolderList}"
-            Width="300"/>
+        <ContentControl DockPanel.Dock="Top"
+                        Content="{Binding Header}"/>
+        <ContentControl DockPanel.Dock="Left" 
+                        Content="{Binding FolderList}"
+                        Width="300"/>
         <ContentControl Content="{Binding PrimaryView}"/>
     </DockPanel>
 </UserControl>

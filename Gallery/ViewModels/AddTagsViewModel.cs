@@ -59,7 +59,7 @@
 
             LastValidColor = this.WhenAnyValue(x => x.Color).Where(color => _hexColorRegex.IsMatch(color));
 
-            var tags = _dbService.Tags();
+            var tags = _dbService.TagNames();
             _tagsCache = tags.AsObservableCache();
 
             var disposable_tags = tags.Bind(out _tags).Subscribe();

@@ -14,7 +14,8 @@
         IObservable<IChangeSet<string, string>> TrackedFolders();
         IObservable<bool> IsTracked(string folderPath);
 
-        IObservable<IChangeSet<Tag, string>> Tags();
+        IObservable<IChangeSet<Tag, Tag>> Tags();
+        IObservable<IChangeSet<Tag, string>> TagNames();
         IObservable<IChangeSet<TagGroup, string>> TagGroups();
 
         IEnumerable<TrackedFile> GetFiles(IEnumerable<string> folders);
@@ -24,6 +25,5 @@
 
         void AddTag(Tag tag, params string[] filePaths);
         void CreateTagGroup(TagGroup group);
-        ////void AddTagToGroup(string tagName, string groupName);
     }
 }

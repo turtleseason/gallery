@@ -240,5 +240,49 @@ namespace Tests
             database.UntrackFolder(path);
             Assert.IsFalse(result);
         }
+
+        [Test]
+        public void Tags_ContainsAllUniqueTags()
+        {
+            string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
+
+            database.TrackFolder(paths[0]);
+            database.TrackFolder(paths[1]);
+            database.TrackFolder(paths[2]);
+
+            TagGroup group = TestUtil.TestTagGroups[1];
+            Tag[] tags = { new Tag("Tag"), new Tag("Tag2", "Potato", group), new Tag("Tag2", group: group) };
+
+            database.AddTag(tags[0], paths);
+            database.AddTag(tags[1], paths[0], paths[1]);
+            database.AddTag(tags[2], paths[2]);
+
+            IReadOnlyCollection<Tag> result = null;
+            database.Tags().ToCollection().Subscribe(x => result = x);
+
+            Assert.AreEqual(result.Count, tags.Length);
+            Assert.That(result, Is.EquivalentTo(tags));
+        }
+
+        [Test]
+        public void Tags_UpdatesOnAddTag()
+        {
+            string path = @"C:\fakepath";
+            database.TrackFolder(path);
+
+            Tag tag = new Tag("Tag", "Value");
+            Tag tagWithGroup = new Tag(tag.Name, tag.Value, TestUtil.TestTagGroups[1]);
+
+            IReadOnlyCollection<Tag> result = null;
+            database.Tags().ToCollection().Subscribe(x => result = x);
+
+            Assert.IsEmpty(result);
+
+            database.AddTag(tag, path);
+            Assert.That(result, Is.EquivalentTo(new[] { tag }));
+
+            database.AddTag(tagWithGroup, path);
+            Assert.That(result, Is.EquivalentTo(new[] { tagWithGroup }));
+        }
     }
 }
