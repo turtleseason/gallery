@@ -3,13 +3,21 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:local="using:Gallery"
+             xmlns:vm="using:Gallery.ViewModels"
              xmlns:c="using:Gallery.Converters"
              mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="450"
              x:Class="Gallery.Views.SearchView">
     <StackPanel Margin="10">
-        <Label>Search for files...</Label>
+        <Label Margin="0,0,0,5">Search for files...</Label>
 
         <StackPanel Orientation="Horizontal">
+            <StackPanel.Styles>
+                <Style Selector="ComboBox">
+                    <Setter Property="VerticalAlignment" Value="Stretch"/>
+                    <Setter Property="Margin" Value="0,0,10,0"/>        
+                </Style>
+            </StackPanel.Styles>
+            
             <ComboBox SelectedIndex="0">
                 <ComboBox.Items>
                     <ComboBoxItem>
@@ -35,4 +43,8 @@
             <Button Command="{Binding DoSearch}">Search</Button>
         </StackPanel>
     </StackPanel>
+
+    <Design.DataContext>
+        <vm:SearchViewModel/>
+    </Design.DataContext>
 </UserControl>

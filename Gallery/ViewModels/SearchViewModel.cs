@@ -68,6 +68,9 @@
             });
         }
 
+        public SearchViewModel() : this(null!, null, null)
+        { }
+
         public enum ValueFilter { Any, None, Value }
 
         public string? UrlPathSegment => "Search";

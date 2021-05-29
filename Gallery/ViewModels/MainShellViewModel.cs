@@ -17,7 +17,8 @@
             SearchCommand = ReactiveCommand.CreateFromObservable<Unit, IRoutableViewModel>(
                 _ => Router.Navigate.Execute(new SearchViewModel(this)));
 
-            Header = new HeaderViewModel();
+            Title = Router.CurrentViewModel.Select(vm => vm?.UrlPathSegment ?? "null");
+
             FolderList = new FolderListViewModel();
         }
 
@@ -28,7 +29,7 @@
 
         public ReactiveCommand<Unit, Unit> BackCommand => Router.NavigateBack;
 
-        public HeaderViewModel Header { get; }
+        public IObservable<string> Title { get; }
 
         public FolderListViewModel FolderList { get; }
     }
