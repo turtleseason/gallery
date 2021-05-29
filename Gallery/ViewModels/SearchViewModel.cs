@@ -17,6 +17,8 @@
 
     using Splat;
 
+    using Parameter = Gallery.Models.SearchParameters;
+
     public class SearchViewModel : ViewModelBase, IRoutableViewModel
     {
         private readonly IDatabaseService _dbService;
@@ -95,7 +97,7 @@
             string? value = (SelectedValue.Filter == ValueFilter.Value) ? SelectedValue.Value : null;
             bool ignoreValue = SelectedValue.Filter == ValueFilter.Any;
 
-            var searchParameter = new Models.SearchParameters.Tagged(new Tag(selectedTag.Name, value, selectedTag.Group), ignoreValue);
+            var searchParameter = new Parameter.Tagged(new Tag(selectedTag.Name, value, selectedTag.Group), ignoreValue);
 
             _sfService.SetSearchParameters(new List<ISearchParameter> { searchParameter });
 
