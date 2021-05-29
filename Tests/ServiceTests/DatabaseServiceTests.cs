@@ -23,11 +23,11 @@ namespace Tests
 
     public class DatabaseServiceTests
     {
-        private readonly string connectionString = ConfigurationManager.ConnectionStrings["Default"].ConnectionString;
+        private readonly string _connectionString = ConfigurationManager.ConnectionStrings["Default"].ConnectionString;
 
-        private DatabaseService database;
-        private SqliteConnection conn;
-        private Mock<IFileSystemService> mockFileSystem;
+        private DatabaseService _database;
+        private SqliteConnection _conn;
+        private Mock<IFileSystemService> _mockFileSystem;
 
         /// Gets all files in the given folder(s) in the current mocked file system (for testing against results from the database).
         public IEnumerable<GalleryFile> GetMockFiles(params string[] paths)
@@ -35,7 +35,7 @@ namespace Tests
             List<GalleryFile> result = new();
             foreach (string path in paths)
             {
-                result.AddRange(mockFileSystem.Object.GetFiles(path));
+                result.AddRange(_mockFileSystem.Object.GetFiles(path));
             }
 
             return result;
@@ -61,24 +61,24 @@ namespace Tests
         public void Setup()
         {
             // Keep an open connection so that the in-memory DB persists through the whole test
-            conn = new SqliteConnection(connectionString);
-            conn.Open();
+            _conn = new SqliteConnection(_connectionString);
+            _conn.Open();
 
-            mockFileSystem = new Mock<IFileSystemService>(MockBehavior.Strict);
-            mockFileSystem.Setup(mock => mock.GetFiles(It.IsAny<string>())).Returns((string path) =>
+            _mockFileSystem = new Mock<IFileSystemService>(MockBehavior.Strict);
+            _mockFileSystem.Setup(mock => mock.GetFiles(It.IsAny<string>())).Returns((string path) =>
                 new List<GalleryFile>()
                 {
                     new GalleryFile { FullPath = Path.Combine(path, "File1.png") },
                     new GalleryFile { FullPath  = Path.Combine(path, "file2.jpg") },
                     new GalleryFile { FullPath  = Path.Combine(path, "a.txt") },
                 });
-            database = new DatabaseService(mockFileSystem.Object);
+            _database = new DatabaseService(_mockFileSystem.Object);
         }
 
         [TearDown]
         public void TearDown()
         {
-            conn.Dispose();
+            _conn.Dispose();
         }
 
         [Test]
@@ -86,13 +86,13 @@ namespace Tests
         {
             string folderPath = @"C:\fakepath";
 
-            database.TrackFolder(folderPath);
+            _database.TrackFolder(folderPath);
 
-            var folders = conn.Query<string>("SELECT path FROM Folder").ToList();
+            var folders = _conn.Query<string>("SELECT path FROM Folder").ToList();
             Assert.AreEqual(folders.Count, 1);
             Assert.Contains(folderPath, folders);
 
-            var files = conn.Query<string>("SELECT path FROM File").ToList();
+            var files = _conn.Query<string>("SELECT path FROM File").ToList();
             var expectedFiles = GetMockFilePaths(folderPath);
             Assert.That(files, Is.EquivalentTo(expectedFiles));
         }
@@ -103,20 +103,20 @@ namespace Tests
             string untrackedPath = @"C:\fakepath";
             string trackedPath = @"C:\other";
 
-            database.TrackFolder(untrackedPath);
-            database.TrackFolder(trackedPath);
+            _database.TrackFolder(untrackedPath);
+            _database.TrackFolder(trackedPath);
 
-            database.UntrackFolder(untrackedPath);
+            _database.UntrackFolder(untrackedPath);
 
-            var folders = conn.Query<string>("SELECT path FROM Folder").ToList();
+            var folders = _conn.Query<string>("SELECT path FROM Folder").ToList();
             Assert.AreEqual(folders.Count, 1);
             Assert.Contains(trackedPath, folders);
 
-            var untrackedFiles = conn.Query<string>("SELECT path FROM File WHERE path = @Path", new { Path = untrackedPath }).ToList();
+            var untrackedFiles = _conn.Query<string>("SELECT path FROM File WHERE path = @Path", new { Path = untrackedPath }).ToList();
             Assert.Zero(untrackedFiles.Count);
 
             // Make sure *only* files associated with the untracked folder are deleted
-            var allFiles = conn.Query<string>("SELECT path FROM File").ToList();
+            var allFiles = _conn.Query<string>("SELECT path FROM File").ToList();
             Assert.That(allFiles, Is.EquivalentTo(GetMockFilePaths(trackedPath)));
         }
 
@@ -126,13 +126,13 @@ namespace Tests
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
             foreach (string path in paths)
             {
-                database.TrackFolder(path);
+                _database.TrackFolder(path);
             }
 
-            var path1Files = database.GetFiles(new[] { paths[0] }).Select(x => x.FullPath);
+            var path1Files = _database.GetFiles(new[] { paths[0] }).Select(x => x.FullPath);
             Assert.That(path1Files, Is.EquivalentTo(GetMockFilePaths(paths[0])));
 
-            var allFiles = database.GetFiles(paths).Select(x => x.FullPath);
+            var allFiles = _database.GetFiles(paths).Select(x => x.FullPath);
             Assert.That(allFiles, Is.EquivalentTo(GetMockFilePaths(paths)));
         }
 
@@ -142,10 +142,10 @@ namespace Tests
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
             foreach (string path in paths)
             {
-                database.TrackFolder(path);
+                _database.TrackFolder(path);
             }
 
-            var files = database.GetFiles(new List<string>()).Select(x => x.FullPath);
+            var files = _database.GetFiles(new List<string>()).Select(x => x.FullPath);
 
             Assert.That(files, Is.EquivalentTo(GetMockFilePaths(paths)));
         }
@@ -157,10 +157,10 @@ namespace Tests
             string folder = @"C:\fakepath";
             string file = GetMockFilePaths(folder).First();
 
-            database.TrackFolder(folder);
-            database.AddTag(tag, file);
+            _database.TrackFolder(folder);
+            _database.AddTag(tag, file);
 
-            IEnumerable<TrackedFile> results = database.GetFiles(new[] { folder });
+            IEnumerable<TrackedFile> results = _database.GetFiles(new[] { folder });
             foreach (TrackedFile result in results)
             {
                 if (result.FullPath == file)
@@ -180,11 +180,11 @@ namespace Tests
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
             foreach (string path in paths)
             {
-                database.TrackFolder(path);
+                _database.TrackFolder(path);
             }
 
             IReadOnlyCollection<string> result = null;
-            database.TrackedFolders().ToCollection().Subscribe(folders => result = folders);
+            _database.TrackedFolders().ToCollection().Subscribe(folders => result = folders);
 
             Assert.That(result, Is.EquivalentTo(paths));
         }
@@ -194,19 +194,19 @@ namespace Tests
         {
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
 
-            database.TrackFolder(paths[0]);
-            database.TrackFolder(paths[1]);
+            _database.TrackFolder(paths[0]);
+            _database.TrackFolder(paths[1]);
 
             IReadOnlyCollection<string> result = null;
-            database.TrackedFolders().ToCollection().Subscribe(folders => result = folders);
+            _database.TrackedFolders().ToCollection().Subscribe(folders => result = folders);
 
-            database.UntrackFolder(paths[0]);
+            _database.UntrackFolder(paths[0]);
             Assert.That(result, Is.EquivalentTo(new string[] { paths[1] }));
 
-            database.TrackFolder(paths[2]);
+            _database.TrackFolder(paths[2]);
             Assert.That(result, Is.EquivalentTo(new string[] { paths[1], paths[2] }));
 
-            database.TrackFolder(paths[0]);
+            _database.TrackFolder(paths[0]);
             Assert.That(result, Is.EquivalentTo(paths));
         }
 
@@ -216,13 +216,13 @@ namespace Tests
             string untrackedPath = @"C:\fakepath";
             string trackedPath = @"C:\other";
 
-            database.TrackFolder(trackedPath);
+            _database.TrackFolder(trackedPath);
 
             bool? result = null;
-            database.IsTracked(untrackedPath).Take(1).Subscribe(x => result = x);
+            _database.IsTracked(untrackedPath).Take(1).Subscribe(x => result = x);
             Assert.IsFalse(result);
 
-            database.IsTracked(trackedPath).Take(1).Subscribe(x => result = x);
+            _database.IsTracked(trackedPath).Take(1).Subscribe(x => result = x);
             Assert.IsTrue(result);
         }
 
@@ -232,12 +232,12 @@ namespace Tests
             string path = @"C:\fakepath";
 
             bool? result = null;
-            database.IsTracked(path).Subscribe(x => result = x);
+            _database.IsTracked(path).Subscribe(x => result = x);
 
-            database.TrackFolder(path);
+            _database.TrackFolder(path);
             Assert.IsTrue(result);
 
-            database.UntrackFolder(path);
+            _database.UntrackFolder(path);
             Assert.IsFalse(result);
         }
 
@@ -246,19 +246,19 @@ namespace Tests
         {
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
 
-            database.TrackFolder(paths[0]);
-            database.TrackFolder(paths[1]);
-            database.TrackFolder(paths[2]);
+            _database.TrackFolder(paths[0]);
+            _database.TrackFolder(paths[1]);
+            _database.TrackFolder(paths[2]);
 
             TagGroup group = TestUtil.TestTagGroups[1];
             Tag[] tags = { new Tag("Tag"), new Tag("Tag2", "Potato", group), new Tag("Tag2", group: group) };
 
-            database.AddTag(tags[0], paths);
-            database.AddTag(tags[1], paths[0], paths[1]);
-            database.AddTag(tags[2], paths[2]);
+            _database.AddTag(tags[0], paths);
+            _database.AddTag(tags[1], paths[0], paths[1]);
+            _database.AddTag(tags[2], paths[2]);
 
             IReadOnlyCollection<Tag> result = null;
-            database.Tags().ToCollection().Subscribe(x => result = x);
+            _database.Tags().ToCollection().Subscribe(x => result = x);
 
             Assert.AreEqual(result.Count, tags.Length);
             Assert.That(result, Is.EquivalentTo(tags));
@@ -268,21 +268,60 @@ namespace Tests
         public void Tags_UpdatesOnAddTag()
         {
             string path = @"C:\fakepath";
-            database.TrackFolder(path);
+            _database.TrackFolder(path);
 
             Tag tag = new Tag("Tag", "Value");
             Tag tagWithGroup = new Tag(tag.Name, tag.Value, TestUtil.TestTagGroups[1]);
 
             IReadOnlyCollection<Tag> result = null;
-            database.Tags().ToCollection().Subscribe(x => result = x);
+            _database.Tags().ToCollection().Subscribe(x => result = x);
 
             Assert.IsEmpty(result);
 
-            database.AddTag(tag, path);
+            _database.AddTag(tag, path);
             Assert.That(result, Is.EquivalentTo(new[] { tag }));
 
-            database.AddTag(tagWithGroup, path);
+            _database.AddTag(tagWithGroup, path);
             Assert.That(result, Is.EquivalentTo(new[] { tagWithGroup }));
+        }
+
+        [Test]
+        public void TagNames_ContainsAllUniqueTagNames()
+        {
+            string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
+
+            _database.TrackFolder(paths[0]);
+            _database.TrackFolder(paths[1]);
+            _database.TrackFolder(paths[2]);
+
+            TagGroup group = TestUtil.TestTagGroups[1];
+            Tag[] tags = { new Tag("Tag"), new Tag("Tag2", "Potato", group), new Tag("Tag2", group: group) };
+
+            _database.AddTag(tags[0], paths);
+            _database.AddTag(tags[1], paths[0], paths[1]);
+            _database.AddTag(tags[2], paths[2]);
+
+            IReadOnlyCollection<Tag> result = null;
+            _database.TagNames().ToCollection().Subscribe(x => result = x);
+
+            Assert.AreEqual(result.Count, 2);
+            Assert.IsTrue(result.Any(x => x.Name == "Tag"));
+            Assert.IsTrue(result.Any(x => x.Name == "Tag2"));
+        }
+
+        [Test]
+        public void TagGroups_ContainsAllUniqueTagGroups()
+        {
+            TagGroup group = TestUtil.TestTagGroups[1];
+
+            _database.CreateTagGroup(group);
+
+            IReadOnlyCollection<TagGroup> result = null;
+            _database.TagGroups().ToCollection().Subscribe(x => result = x);
+
+            Assert.AreEqual(result.Count, 2);
+            Assert.That(result.Contains(group));
+            Assert.That(result.Contains(new TagGroup(Tag.DefaultGroupName)));
         }
     }
 }

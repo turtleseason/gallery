@@ -13,25 +13,25 @@
 
     internal class FolderListItemViewModelTests
     {
-        private FolderListItemViewModel vm;
+        private FolderListItemViewModel _vm;
 
-        private Mock<IDatabaseService> mockDb;
+        private Mock<IDatabaseService> _mockDb;
 
         [SetUp]
         public void SetUp()
         {
-            mockDb = new Mock<IDatabaseService>(MockBehavior.Strict);
-            vm = null;
+            _mockDb = new Mock<IDatabaseService>(MockBehavior.Strict);
+            _vm = null;
         }
 
         [Test]
         public void IsTracked_IsFalseWhenInitiallyUntracked()
         {
-            mockDb.Setup(mock => mock.IsTracked(It.IsAny<string>())).Returns(Observable.Return(false));
-            vm = new FolderListItemViewModel(@"C:\fakepath", dbService: mockDb.Object);
+            _mockDb.Setup(mock => mock.IsTracked(It.IsAny<string>())).Returns(Observable.Return(false));
+            _vm = new FolderListItemViewModel(@"C:\fakepath", dbService: _mockDb.Object);
 
             bool? result = null;
-            vm.IsTracked.Subscribe(isTracked => result = isTracked);
+            _vm.IsTracked.Subscribe(isTracked => result = isTracked);
 
             Assert.IsFalse(result);
         }
@@ -39,11 +39,11 @@
         [Test]
         public void IsTracked_IsTrueWhenInitiallyTracked()
         {
-            mockDb.Setup(mock => mock.IsTracked(It.IsAny<string>())).Returns(Observable.Return(true));
-            vm = new FolderListItemViewModel(@"C:\fakepath", dbService: mockDb.Object);
+            _mockDb.Setup(mock => mock.IsTracked(It.IsAny<string>())).Returns(Observable.Return(true));
+            _vm = new FolderListItemViewModel(@"C:\fakepath", dbService: _mockDb.Object);
 
             bool? result = null;
-            vm.IsTracked.Subscribe(isTracked => result = isTracked);
+            _vm.IsTracked.Subscribe(isTracked => result = isTracked);
 
             Assert.IsTrue(result);
         }
@@ -52,11 +52,11 @@
         public void IsTracked_UpdatesWhenValueChanges()
         {
             var values = new Subject<bool>();
-            mockDb.Setup(mock => mock.IsTracked(It.IsAny<string>())).Returns(values);
-            vm = new FolderListItemViewModel(@"C:\fakepath", dbService: mockDb.Object);
+            _mockDb.Setup(mock => mock.IsTracked(It.IsAny<string>())).Returns(values);
+            _vm = new FolderListItemViewModel(@"C:\fakepath", dbService: _mockDb.Object);
 
             bool? result = null;
-            vm.IsTracked.Subscribe(isTracked => result = isTracked);
+            _vm.IsTracked.Subscribe(isTracked => result = isTracked);
 
             values.OnNext(false);
             Assert.IsFalse(result);

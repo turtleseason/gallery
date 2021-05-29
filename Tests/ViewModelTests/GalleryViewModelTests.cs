@@ -18,25 +18,32 @@
 
     internal class GalleryViewModelTests
     {
-        private Mock<ISelectedFilesService> mockFiles;
-        private Mock<IDatabaseService> mockDb;
+        private Mock<ISelectedFilesService> _mockFiles;
+        private Mock<IDatabaseService> _mockDb;
 
-        private GalleryViewModel vm;
+        private GalleryViewModel _vm;
 
         [SetUp]
         public void SetUp()
         {
-            mockFiles = new Mock<ISelectedFilesService>();
-            mockDb = TestUtil.GetMockDatabase(true).Db;
+            _mockFiles = new Mock<ISelectedFilesService>();
+            _mockDb = TestUtil.GetMockDatabase(true).Db;
 
             var files = new SourceCache<GalleryFile, string>(x => x.FullPath);
             files.AddOrUpdate(new TrackedFile() { FullPath = @"C:\fakepath\file1.png" });
             files.AddOrUpdate(new TrackedFile() { FullPath = @"C:\fakepath\file_2.jpg" });
             files.AddOrUpdate(new GalleryFile() { FullPath = @"C:\fakepath\filethree.png" });
 
-            mockFiles.Setup(mock => mock.Connect()).Returns(files.Connect());
+            _mockFiles.Setup(mock => mock.Connect()).Returns(files.Connect());
 
-            vm = new GalleryViewModel(dbService: mockDb.Object, sfService: mockFiles.Object);
+            _vm = new GalleryViewModel(null, dbService: _mockDb.Object, sfService: _mockFiles.Object);
+            _vm.Activator.Activate();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            _vm.Activator.Deactivate();
         }
 
         [Test]
@@ -45,14 +52,14 @@
             Tag tag = new Tag("TestTag", "TagValue");
             Interactions.ShowDialog.RegisterHandler(interaction => interaction.SetOutput(tag));
 
-            vm.SelectedItems.AddRange(vm.Items);
-            var expectedPaths = vm.SelectedItems.Select(x => x.FullPath).ToArray();
+            _vm.SelectedItems.AddRange(_vm.Items);
+            var expectedPaths = _vm.SelectedItems.Select(x => x.FullPath).ToArray();
 
-            mockDb.Setup(mock => mock.AddTag(tag, expectedPaths));
+            _mockDb.Setup(mock => mock.AddTag(tag, expectedPaths));
 
-            vm.AddTagCommand.Execute().Subscribe();
+            _vm.AddTagCommand.Execute().Subscribe();
 
-            mockDb.Verify(mock => mock.AddTag(tag, expectedPaths), Times.Once);
+            _mockDb.Verify(mock => mock.AddTag(tag, expectedPaths), Times.Once);
         }
 
         [Test]
@@ -60,11 +67,11 @@
         {
             Interactions.ShowDialog.RegisterHandler(interaction => interaction.SetOutput(null));
 
-            vm.SelectedItems.AddRange(vm.Items);
+            _vm.SelectedItems.AddRange(_vm.Items);
 
-            vm.AddTagCommand.Execute().Subscribe();
+            _vm.AddTagCommand.Execute().Subscribe();
 
-            mockDb.Verify(mock => mock.AddTag(It.IsAny<Tag>(), It.IsAny<string[]>()), Times.Never);
+            _mockDb.Verify(mock => mock.AddTag(It.IsAny<Tag>(), It.IsAny<string[]>()), Times.Never);
         }
     }
 }

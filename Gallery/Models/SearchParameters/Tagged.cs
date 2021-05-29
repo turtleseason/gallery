@@ -7,7 +7,7 @@
         private readonly Tag _tag;
         private readonly bool _ignoreValue;
 
-        public Tagged(Tag tag, bool ignoreValue)
+        public Tagged(Tag tag, bool ignoreValue = false)
         {
             _tag = tag;
             _ignoreValue = ignoreValue;
