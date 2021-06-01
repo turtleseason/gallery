@@ -53,7 +53,7 @@
             Interactions.ShowDialog.RegisterHandler(interaction => interaction.SetOutput(tag));
 
             _vm.SelectedItems.AddRange(_vm.Items);
-            var expectedPaths = _vm.SelectedItems.Select(x => x.FullPath).ToArray();
+            var expectedPaths = _vm.SelectedItems.Select(x => x.File.FullPath).ToArray();
 
             _mockDb.Setup(mock => mock.AddTag(tag, expectedPaths));
 

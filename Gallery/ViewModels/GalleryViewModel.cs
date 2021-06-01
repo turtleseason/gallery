@@ -25,7 +25,7 @@
         private readonly ISelectedFilesService _sfService;
         private readonly IDatabaseService _dbService;
 
-        private ReadOnlyObservableCollection<GalleryFile>? _items;
+        private ReadOnlyObservableCollection<GalleryThumbnailViewModel>? _items;
 
         public GalleryViewModel(IScreen screen, ISelectedFilesService? sfService = null, IDatabaseService? dbService = null)
         {
@@ -34,7 +34,7 @@
             _sfService = sfService ?? Locator.Current.GetService<ISelectedFilesService>();
             _dbService = dbService ?? Locator.Current.GetService<IDatabaseService>();
 
-            SelectedItems = new ObservableCollection<GalleryFile>();
+            SelectedItems = new ObservableCollection<GalleryThumbnailViewModel>();
 
             AddTagCommand = ReactiveCommand.CreateFromTask<Tag?, Unit>(async tag =>
             {
@@ -46,6 +46,7 @@
             {
                 _sfService.Connect()
                 .Sort(SortExpressionComparer<GalleryFile>.Ascending(file => file.FullPath))  // todo: sort in SFS (so it applies everywhere)
+                .Transform(file => new GalleryThumbnailViewModel(file))
                 .Bind(out _items)
                 .Subscribe()
                 .DisposeWith(disposables);
@@ -64,13 +65,13 @@
 
         public ReactiveCommand<Tag?, Unit> AddTagCommand { get; }
 
-        public ReadOnlyObservableCollection<GalleryFile>? Items => _items;
+        public ReadOnlyObservableCollection<GalleryThumbnailViewModel>? Items => _items;
 
-        public ObservableCollection<GalleryFile> SelectedItems { get; }
+        public ObservableCollection<GalleryThumbnailViewModel> SelectedItems { get; }
 
         private async Task AddTag(Tag? tag)
         {
-            var files = SelectedItems.Select(x => x.FullPath).ToArray();
+            var files = SelectedItems.Select(x => x.File.FullPath).ToArray();
 
             tag ??= (Tag?)await Interactions.ShowDialog.Handle(new AddTagsViewModel(_dbService));
 
