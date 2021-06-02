@@ -8,6 +8,9 @@
     using System.Linq;
     using System.Reactive.Linq;
 
+    using Avalonia;
+    using Avalonia.Media.Imaging;
+
     using Dapper;
 
     using DynamicData;
@@ -98,6 +101,7 @@
         {
             string querySql = @$"
                 SELECT File.path as {nameof(TrackedFile.FullPath)},
+                       File.thumbnail as {nameof(TrackedFile.Thumbnail)},
                        Tag.name as {nameof(Tag.Name)},
                        FileTag.tag_value as {nameof(Tag.Value)},
                        TagGroup.name as {nameof(TagGroup.Name)},
@@ -163,7 +167,6 @@
 
             string addFolderSql = @"INSERT INTO Folder(path) VALUES(@Path);
                                     SELECT last_insert_rowid();";
-            string addFileSql = @"INSERT INTO File(path, folder_id) VALUES(@Path, @FolderId)";
 
             IEnumerable<GalleryFile>? files = _fsService.GetFiles(folderPath);
             if (files == null)
@@ -172,14 +175,15 @@
                 return;
             }
 
+            int folderId;
             using (var conn = new SqliteConnection(ConnectionString))
             {
-                int folderId = conn.Query<int>(addFolderSql, new { Path = folderPath }).First();
+                folderId = conn.Query<int>(addFolderSql, new { Path = folderPath }).First();
+            }
 
-                foreach (var file in files)
-                {
-                    conn.Execute(addFileSql, new { Path = file.FullPath, FolderId = folderId });
-                }
+            foreach (var file in files)
+            {
+                TrackFile(file.FullPath, folderId);
             }
 
             _trackedFolders.AddOrUpdate(folderPath);
@@ -244,7 +248,7 @@
 
             _tags.AddOrUpdate(tag);
             _tagNames.AddOrUpdate(new Tag(tag.Name, group: tag.Group));
-            OnChange?.Invoke(this, new EventArgs());
+            ////OnChange?.Invoke(this, new EventArgs());
         }
 
         // Can be used to update the color; may want to make a separate method to edit/rename groups instead?
@@ -308,6 +312,61 @@
             using (var conn = new SqliteConnection(ConnectionString))
             {
                 conn.Execute(createTablesSql);
+            }
+        }
+
+        // Very temporary lol - just to get this working before refactoring
+        private void TrackFile(string path, int folderId)
+        {
+            string addFileSql = @"INSERT INTO File(path, folder_id, thumbnail) VALUES(@Path, @FolderId, @Thumbnail)";
+
+            DynamicParameters dp = new DynamicParameters();
+            dp.Add("@Path", path);
+            dp.Add("@FolderId", folderId);
+            dp.Add("@Thumbnail", null);
+
+            var info = new FileInfo(path);
+            ISet<Tag> tags = new HashSet<Tag>
+            {
+                new Tag("Date", info.CreationTime.ToString()),
+                new Tag("Edited", info.LastWriteTime.ToString()),
+            };
+
+            Bitmap? img = ImageUtil.LoadBitmap(path);
+            if (img != null)
+            {
+                tags.Add(new Tag("Width", img.PixelSize.Width.ToString()));
+                tags.Add(new Tag("Height", img.PixelSize.Height.ToString()));
+
+                var aspect = img.PixelSize.AspectRatio;
+                PixelSize thumbnailSize = aspect > 1
+                    ? new PixelSize(200, (int)(200 / aspect))
+                    : new PixelSize((int)(200 * aspect), 200);
+
+                var thumbnailFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "JellyfishGallery",
+                    "Thumbnails",
+                    folderId.ToString());
+                Directory.CreateDirectory(thumbnailFolder);
+
+                var thumbnailPath = Path.Combine(thumbnailFolder, Path.GetFileName(path).Replace('.', '_') + ".png");
+                using (Stream s = File.Create(thumbnailPath))
+                {
+                    img.CreateScaledBitmap(thumbnailSize).Save(s);
+                }
+
+                dp.Add("@Thumbnail", thumbnailPath);
+            }
+
+            using (var conn = new SqliteConnection(ConnectionString))
+            {
+                conn.Execute(addFileSql, dp);
+            }
+
+            foreach (var tag in tags)
+            {
+                AddTag(tag, path);
             }
         }
 

@@ -19,7 +19,7 @@
 
         public int? Height { get; set; } = null;
 
-        public Uri? Thumbnail { get; set; } = null;
+        public string? Thumbnail { get; set; } = null;
 
         ////public override bool Equals(object? obj)
         ////{

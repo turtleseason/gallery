@@ -1,6 +1,7 @@
 ﻿namespace Gallery.ViewModels
 {
     using System;
+    using System.Diagnostics;
     using System.IO;
     using System.Reactive.Linq;
     using System.Threading.Tasks;
@@ -10,13 +11,33 @@
     using Avalonia.Platform;
 
     using Gallery.Models;
+    using Gallery.Services;
 
     using ReactiveUI;
 
     public class GalleryThumbnailViewModel : ViewModelBase
     {
+        private static Bitmap? _defaultTrackedThumbnail;  // temp
+
         private GalleryFile _file;
         private Bitmap? _thumbnail;
+
+        static GalleryThumbnailViewModel()  // temp
+        {
+            try
+            {
+                var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
+                using (Stream s = assets.Open(new Uri("avares://Gallery/Assets/thumbnail_placeholder.png")))
+                {
+                    _defaultTrackedThumbnail = Bitmap.DecodeToWidth(s, 200);
+                }
+            }
+            catch (NullReferenceException)
+            {
+                // Happens in test runner (Avalonia.Current has nothing registered);
+                // ignore for now since the placeholder image setup is temporary
+            }
+        }
 
         public GalleryThumbnailViewModel(GalleryFile file)
         {
@@ -32,37 +53,18 @@
 
         public Bitmap? LoadThumbnail()
         {
-            if (File.Thumbnail == null)
+            if (File.Thumbnail != null)
             {
-                try
-                {
-                    using (Stream s = System.IO.File.OpenRead(File.FullPath))
-                    {
-                        return Bitmap.DecodeToHeight(s, 200);
-                    }
-                }
-                catch (NullReferenceException)
-                {
-                    // Not an image (that we know how to parse)
-                    return null;
-                }
+                return ImageUtil.LoadBitmap(File.Thumbnail);
+            }
+            else if (File is TrackedFile)
+            {
+                // Known non-image file (could just return null & use the default file icon)
+                return _defaultTrackedThumbnail;
             }
             else
             {
-                try
-                {
-                    var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                    using (Stream s = assets.Open(File.Thumbnail))
-                    {
-                        return Bitmap.DecodeToWidth(s, 200);
-                    }
-                }
-                catch (NullReferenceException)
-                {
-                    // Happens in test runner (Avalonia.Current has nothing registered);
-                    // ignore for now since the placeholder image setup is temporary
-                    return null;
-                }
+                return ImageUtil.LoadThumbnail(File.FullPath);
             }
         }
     }

@@ -45,8 +45,8 @@
             this.WhenActivated((CompositeDisposable disposables) =>
             {
                 _sfService.Connect()
-                .Sort(SortExpressionComparer<GalleryFile>.Ascending(file => file.FullPath))  // todo: sort in SFS (so it applies everywhere)
                 .Transform(file => new GalleryThumbnailViewModel(file))
+                .Sort(SortExpressionComparer<GalleryThumbnailViewModel>.Ascending(vm => vm.File.FullPath))  // todo: sort in SFS (so it applies everywhere)
                 .Bind(out _items)
                 .Subscribe()
                 .DisposeWith(disposables);
