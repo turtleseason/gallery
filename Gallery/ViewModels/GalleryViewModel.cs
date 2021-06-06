@@ -23,16 +23,16 @@
     public class GalleryViewModel : ViewModelBase, IRoutableViewModel
     {
         private readonly ISelectedFilesService _sfService;
-        private readonly IDatabaseService _dbService;
+        private readonly IDataService _dbService;
 
         private ReadOnlyObservableCollection<GalleryThumbnailViewModel>? _items;
 
-        public GalleryViewModel(IScreen screen, ISelectedFilesService? sfService = null, IDatabaseService? dbService = null)
+        public GalleryViewModel(IScreen screen, ISelectedFilesService? sfService = null, IDataService? dbService = null)
         {
             HostScreen = screen;
 
             _sfService = sfService ?? Locator.Current.GetService<ISelectedFilesService>();
-            _dbService = dbService ?? Locator.Current.GetService<IDatabaseService>();
+            _dbService = dbService ?? Locator.Current.GetService<IDataService>();
 
             SelectedItems = new ObservableCollection<GalleryThumbnailViewModel>();
 

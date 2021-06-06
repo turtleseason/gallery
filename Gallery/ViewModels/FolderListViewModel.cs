@@ -21,15 +21,15 @@
 
     public class FolderListViewModel : ViewModelBase
     {
-        private IDatabaseService _dbService;
+        private IDataService _dbService;
         private IFileSystemService _fsService;
         private ISelectedFilesService _sfService;
 
         private ReadOnlyObservableCollection<string> _trackedFolders;
 
-        public FolderListViewModel(IDatabaseService? dbService = null, IFileSystemService? fsService = null, ISelectedFilesService? sfService = null)
+        public FolderListViewModel(IDataService? dbService = null, IFileSystemService? fsService = null, ISelectedFilesService? sfService = null)
         {
-            _dbService = dbService ?? Locator.Current.GetService<IDatabaseService>();
+            _dbService = dbService ?? Locator.Current.GetService<IDataService>();
             _fsService = fsService ?? Locator.Current.GetService<IFileSystemService>();
             _sfService = sfService ?? Locator.Current.GetService<ISelectedFilesService>();
 

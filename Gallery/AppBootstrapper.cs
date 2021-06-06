@@ -21,7 +21,7 @@
         {
             Locator.CurrentMutable.RegisterConstant(new FileSystemService(), typeof(IFileSystemService));
 
-            Locator.CurrentMutable.RegisterConstant(new DatabaseService(), typeof(IDatabaseService));
+            Locator.CurrentMutable.RegisterConstant(new DataService(), typeof(IDataService));
 
             Locator.CurrentMutable.RegisterConstant(new SelectedFilesService(), typeof(ISelectedFilesService));
         }

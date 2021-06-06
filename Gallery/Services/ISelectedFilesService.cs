@@ -11,7 +11,7 @@
     {
         IObservable<IChangeSet<GalleryFile, string>> Connect();
 
-        void LoadFileCollection(FileCollection collection, bool ignoreSourceFolders = false);
+        ////void LoadFileCollection(FileCollection collection, bool ignoreSourceFolders = false);
 
         void SetSearchParameters(IList<ISearchParameter> parameters);
 

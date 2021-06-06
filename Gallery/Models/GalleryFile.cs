@@ -1,23 +1,26 @@
 ﻿namespace Gallery.Models
 {
-    using System;
     using System.IO;
 
     public class GalleryFile
     {
-        private string? _name;
+        private string _fullPath = string.Empty;
 
-        // The default value (empty string) really shouldn't be used, it should be an error;
-        // is there a way to do that while still taking advantage of Dapper's object mapping?
-        //
-        // (Probably have to wait for this https://github.com/dotnet/csharplang/issues/3630)
-        public string FullPath { get; init; } = string.Empty;
+        // This should be required to initialize if/when that becomes possible
+        // (https://github.com/dotnet/csharplang/issues/3630)
+        public string FullPath
+        {
+            get => _fullPath;
+            init
+            {
+                _fullPath = value;
+                Name = Path.GetFileName(value);
+                Directory = Path.GetDirectoryName(value)!;
+            }
+        }
 
-        public string Name => _name ??= Path.GetFileName(FullPath);
-
-        public int? Width { get; set; } = null;
-
-        public int? Height { get; set; } = null;
+        public string Name { get; protected init; } = string.Empty;
+        public string Directory { get; protected init; } = string.Empty;
 
         public string? Thumbnail { get; set; } = null;
 

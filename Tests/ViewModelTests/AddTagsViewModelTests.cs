@@ -16,7 +16,7 @@
     {
         private static Tag[] _testTags = TestUtil.TestTags;
 
-        private Mock<IDatabaseService> _dbService;
+        private Mock<IDataService> _dbService;
         private ISourceCache<TagGroup, string> _tagGroups;
 
         private AddTagsViewModel _vm;
@@ -69,7 +69,7 @@
             _vm.GroupName = group.Name;
             _vm.Color = group.Color;
 
-            _dbService.Setup(mock => mock.CreateTagGroup(group)).Callback(() => _tagGroups.AddOrUpdate(group));
+            _dbService.Setup(mock => mock.CreateTagGroup(group));
 
             _vm.AddGroupCommand.Execute().Subscribe();
 

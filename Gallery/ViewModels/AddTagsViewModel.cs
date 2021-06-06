@@ -5,11 +5,8 @@
     using System.Diagnostics;
     using System.Linq;
     using System.Reactive;
-    using System.Reactive.Disposables;
     using System.Reactive.Linq;
     using System.Text.RegularExpressions;
-
-    using DynamicData;
 
     using Gallery.Models;
     using Gallery.Services;
@@ -22,12 +19,7 @@
     {
         private static readonly Regex _hexColorRegex = new("^#[a-fA-F0-9]{6}$");
 
-        private readonly IDatabaseService _dbService;
-
-        private readonly IObservableCache<Tag, string> _tagsCache;
-
-        private readonly ReadOnlyObservableCollection<Tag> _tags;
-        private readonly ReadOnlyObservableCollection<TagGroup> _tagGroups;
+        private readonly IDataService _dbService;
 
         private string _name = string.Empty;
         private string _value = string.Empty;
@@ -37,9 +29,9 @@
         private string _groupName = string.Empty;
         private string _groupColor = "#FF66FF";
 
-        public AddTagsViewModel(IDatabaseService? dbService = null)
+        public AddTagsViewModel(IDataService? dbService = null)
         {
-            _dbService = dbService ?? Locator.Current.GetService<IDatabaseService>();
+            _dbService = dbService ?? Locator.Current.GetService<IDataService>();
 
             WindowTitle = "Add tags";
 
@@ -59,25 +51,15 @@
 
             LastValidColor = this.WhenAnyValue(x => x.Color).Where(color => _hexColorRegex.IsMatch(color));
 
-            var tags = _dbService.TagNames();
-            _tagsCache = tags.AsObservableCache();
+            Tags = new ObservableCollection<Tag>(_dbService.GetAllTags()
+                .GroupBy(x => x.Name)
+                .Select(group => new Tag(group.Key, group: group.First().Group)));
+            AvailableGroups = new ObservableCollection<TagGroup>(_dbService.GetAllTagGroups());
 
-            var disposable_tags = tags.Bind(out _tags).Subscribe();
-
-            var disposable_tagGroups = _dbService.TagGroups()
-                .Bind(out _tagGroups)
-                .Subscribe();
-
-            _selectedGroup = _tagGroups.First();
+            _selectedGroup = AvailableGroups.First();
 
             this.WhenAnyValue(x => x.SelectedGroup).Subscribe(_ => CheckIfSelectedGroupMismatch());
             this.WhenAnyValue(x => x.Name).Subscribe(_ => SelectedGroupMismatch = false);
-
-            this.WhenActivated(disposables =>
-            {
-                disposable_tags.DisposeWith(disposables);
-                disposable_tagGroups.DisposeWith(disposables);
-            });
         }
 
         public AddTagsViewModel() : this(null) { }
@@ -85,8 +67,8 @@
         public ReactiveCommand<Unit, Unit> AddTagsCommand { get; }
         public ReactiveCommand<Unit, Unit> AddGroupCommand { get; }
 
-        public ReadOnlyObservableCollection<Tag> Tags => _tags;
-        public ReadOnlyObservableCollection<TagGroup> AvailableGroups => _tagGroups;
+        public ObservableCollection<Tag> Tags { get; set; }
+        public ObservableCollection<TagGroup> AvailableGroups { get; set; }
 
         public string Name { get => _name; set => this.RaiseAndSetIfChanged(ref _name, value); }
         public string Value { get => _value; set => this.RaiseAndSetIfChanged(ref _value, value); }
@@ -110,10 +92,12 @@
 
         public void SetTagGroupIfExists()
         {
-            var lookup = _tagsCache.Lookup(Name);
-            if (lookup.HasValue)
+            // TODO: translate tags to some kind of dictionary/hashtable? Or call a db method..?
+            // (maybe db offers "Get tag names" dictionary tagName key -> tagGroup value?)
+            var lookup = Tags.FirstOrDefault(x => x.Name == Name);
+            if (lookup.Name != null)
             {
-                SelectedGroup = lookup.Value.Group;
+                SelectedGroup = lookup.Group;
             }
 
             SelectedGroupMismatch = false;
@@ -121,19 +105,22 @@
 
         private void CheckIfSelectedGroupMismatch()
         {
-            var lookup = _tagsCache.Lookup(Name);
-            SelectedGroupMismatch = lookup.HasValue && !lookup.Value.Group.Equals(SelectedGroup);
+            // again, do faster lookup somehow
+            var lookup = Tags.FirstOrDefault(x => x.Name == Name);
+            SelectedGroupMismatch = lookup.Name != null && !lookup.Group.Equals(SelectedGroup);
         }
 
         private void AddTagsAndClose()
         {
             if (SelectedGroup.Name == null)
             {
-                SelectedGroup = _tagGroups.First();
+                SelectedGroup = AvailableGroups.First();
             }
 
             string? tagValue = string.IsNullOrWhiteSpace(Value) ? null : Value;
             Tag tag = new Tag(Name, tagValue, SelectedGroup);
+            // use SelectedTag & take that group if it exists? since updating is a separate thing
+            // (or we could just call the separate update method if there's a mismatch)
 
             CloseCommand.Execute(tag).Subscribe();
         }
@@ -144,11 +131,10 @@
 
             _dbService.CreateTagGroup(group);
 
-            // Is it possible for the CreateTagGroup call to return before _tagGroups
-            // has received the update with the new tag group?
-            // (If so, this will set SelectedGroup to TagGroup's default value instead;
-            // there's a safeguard in AddTagsAndClose just in case)
+            // TODO: check whether the add was successful first (ignore if dupe)
+            AvailableGroups.Add(group);
             SelectedGroup = group;
+
             IsAddingGroup = false;
         }
     }

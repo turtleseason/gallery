@@ -19,7 +19,7 @@
     internal class GalleryViewModelTests
     {
         private Mock<ISelectedFilesService> _mockFiles;
-        private Mock<IDatabaseService> _mockDb;
+        private Mock<IDataService> _mockDb;
 
         private GalleryViewModel _vm;
 

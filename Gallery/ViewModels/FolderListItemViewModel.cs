@@ -18,16 +18,16 @@
     public class FolderListItemViewModel : ViewModelBase
     {
         private IFileSystemService _fsService;
-        private IDatabaseService _dbService;
+        private IDataService _dbService;
 
         private bool _hasLoadedChildren = false;
 
         private bool _isExpanded = false;
 
-        public FolderListItemViewModel(DirectoryInfo directoryInfo, IDatabaseService? dbService = null, IFileSystemService? fsService = null)
+        public FolderListItemViewModel(DirectoryInfo directoryInfo, IDataService? dbService = null, IFileSystemService? fsService = null)
         {
             _fsService = fsService ?? Locator.Current.GetService<IFileSystemService>();
-            _dbService = dbService ?? Locator.Current.GetService<IDatabaseService>();
+            _dbService = dbService ?? Locator.Current.GetService<IDataService>();
 
             DirectoryInfo = directoryInfo;
             IsExpanded = false;
@@ -46,7 +46,7 @@
                 });
         }
 
-        public FolderListItemViewModel(string path, IDatabaseService? dbService = null, IFileSystemService? fsService = null)
+        public FolderListItemViewModel(string path, IDataService? dbService = null, IFileSystemService? fsService = null)
             : this(new DirectoryInfo(path), dbService, fsService)
         { }
 

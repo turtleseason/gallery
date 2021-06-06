@@ -19,7 +19,7 @@
     {
         private FolderListViewModel _vm;
 
-        private Mock<IDatabaseService> _mockDb;
+        private Mock<IDataService> _mockDb;
         private Mock<IFileSystemService> _mockFileSystem;
         private Mock<ISelectedFilesService> _mockFiles;
 
@@ -28,7 +28,7 @@
         [SetUp]
         public void SetUp()
         {
-            _mockDb = new Mock<IDatabaseService>(MockBehavior.Strict);
+            _mockDb = new Mock<IDataService>(MockBehavior.Strict);
             _mockFileSystem = new Mock<IFileSystemService>(MockBehavior.Strict);
             _mockFiles = new Mock<ISelectedFilesService>(MockBehavior.Loose);
 

@@ -3,6 +3,7 @@ namespace Tests
     using System;
     using System.Collections.Generic;
     using System.Configuration;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Reactive.Linq;
@@ -21,11 +22,13 @@ namespace Tests
 
     using NUnit.Framework;
 
+    using Parameter = Gallery.Models.SearchParameters;
+
     public class DatabaseServiceTests
     {
         private readonly string _connectionString = ConfigurationManager.ConnectionStrings["Default"].ConnectionString;
 
-        private DatabaseService _database;
+        private DataService _database;
         private SqliteConnection _conn;
         private Mock<IFileSystemService> _mockFileSystem;
 
@@ -72,7 +75,7 @@ namespace Tests
                     new GalleryFile { FullPath  = Path.Combine(path, "file2.jpg") },
                     new GalleryFile { FullPath  = Path.Combine(path, "a.txt") },
                 });
-            _database = new DatabaseService(_mockFileSystem.Object);
+            _database = new DataService(_mockFileSystem.Object);
         }
 
         [TearDown]
@@ -129,11 +132,30 @@ namespace Tests
                 _database.TrackFolder(path);
             }
 
-            var path1Files = _database.GetFiles(new[] { paths[0] }).Select(x => x.FullPath);
+            var path1Files = _database.GetFiles(folders: paths[0]).Select(x => x.FullPath);
             Assert.That(path1Files, Is.EquivalentTo(GetMockFilePaths(paths[0])));
 
-            var allFiles = _database.GetFiles(paths).Select(x => x.FullPath);
+            var allFiles = _database.GetFiles(folders: paths).Select(x => x.FullPath);
             Assert.That(allFiles, Is.EquivalentTo(GetMockFilePaths(paths)));
+        }
+
+        [Test]
+        public void GetFiles_FiltersBySearchParameters()
+        {
+            string path = @"C:\fakepath";
+            string[] taggedFiles = { Path.Combine(path, "File1.png"), Path.Combine(path, "a.txt") };
+
+            Tag tag = TestUtil.TestTags[2];
+
+            _database.TrackFolder(path);
+            _database.CreateTagGroup(tag.Group);
+            _database.AddTag(tag, taggedFiles);
+
+            ISearchParameter[] searchParameters = { new Parameter.Tagged(tag) };
+
+            var result = _database.GetFiles(searchParameters, path).Select(file => file.FullPath);
+
+            Assert.That(result, Is.EquivalentTo(taggedFiles));
         }
 
         [Test]
@@ -145,7 +167,7 @@ namespace Tests
                 _database.TrackFolder(path);
             }
 
-            var files = _database.GetFiles(new List<string>()).Select(x => x.FullPath);
+            var files = _database.GetFiles().Select(x => x.FullPath);
 
             Assert.That(files, Is.EquivalentTo(GetMockFilePaths(paths)));
         }
@@ -160,16 +182,12 @@ namespace Tests
             _database.TrackFolder(folder);
             _database.AddTag(tag, file);
 
-            IEnumerable<TrackedFile> results = _database.GetFiles(new[] { folder });
+            IEnumerable<TrackedFile> results = _database.GetFiles(folders: folder);
             foreach (TrackedFile result in results)
             {
                 if (result.FullPath == file)
                 {
-                    Assert.That(result.Tags, Is.EquivalentTo(new[] { tag }));
-                }
-                else
-                {
-                    Assert.IsFalse(result.Tags.Any());
+                    Assert.IsTrue(result.Tags.Contains(tag));
                 }
             }
         }
@@ -242,84 +260,35 @@ namespace Tests
         }
 
         [Test]
-        public void Tags_ContainsAllUniqueTags()
+        public void GetAllTags_ReturnsAllUniqueTags()
         {
-            string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
+            string[] paths = GetMockFilePaths(@"C:\fakepath").ToArray();
 
-            _database.TrackFolder(paths[0]);
-            _database.TrackFolder(paths[1]);
-            _database.TrackFolder(paths[2]);
+            _database.TrackFolder(@"C:\fakepath");
 
             TagGroup group = TestUtil.TestTagGroups[1];
-            Tag[] tags = { new Tag("Tag"), new Tag("Tag2", "Potato", group), new Tag("Tag2", group: group) };
+            _database.CreateTagGroup(group);
 
+            Tag[] tags = { new Tag("Tag"), new Tag("Tag2", "Potato", group), new Tag("Tag2", group: group) };
             _database.AddTag(tags[0], paths);
             _database.AddTag(tags[1], paths[0], paths[1]);
             _database.AddTag(tags[2], paths[2]);
 
-            IReadOnlyCollection<Tag> result = null;
-            _database.Tags().ToCollection().Subscribe(x => result = x);
+            var result = _database.GetAllTags();
 
-            Assert.AreEqual(result.Count, tags.Length);
-            Assert.That(result, Is.EquivalentTo(tags));
+            Assert.That(tags, Is.SubsetOf(result));
         }
 
         [Test]
-        public void Tags_UpdatesOnAddTag()
-        {
-            string path = @"C:\fakepath";
-            _database.TrackFolder(path);
-
-            Tag tag = new Tag("Tag", "Value");
-            Tag tagWithGroup = new Tag(tag.Name, tag.Value, TestUtil.TestTagGroups[1]);
-
-            IReadOnlyCollection<Tag> result = null;
-            _database.Tags().ToCollection().Subscribe(x => result = x);
-
-            Assert.IsEmpty(result);
-
-            _database.AddTag(tag, path);
-            Assert.That(result, Is.EquivalentTo(new[] { tag }));
-
-            _database.AddTag(tagWithGroup, path);
-            Assert.That(result, Is.EquivalentTo(new[] { tagWithGroup }));
-        }
-
-        [Test]
-        public void TagNames_ContainsAllUniqueTagNames()
-        {
-            string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
-
-            _database.TrackFolder(paths[0]);
-            _database.TrackFolder(paths[1]);
-            _database.TrackFolder(paths[2]);
-
-            TagGroup group = TestUtil.TestTagGroups[1];
-            Tag[] tags = { new Tag("Tag"), new Tag("Tag2", "Potato", group), new Tag("Tag2", group: group) };
-
-            _database.AddTag(tags[0], paths);
-            _database.AddTag(tags[1], paths[0], paths[1]);
-            _database.AddTag(tags[2], paths[2]);
-
-            IReadOnlyCollection<Tag> result = null;
-            _database.TagNames().ToCollection().Subscribe(x => result = x);
-
-            Assert.AreEqual(result.Count, 2);
-            Assert.IsTrue(result.Any(x => x.Name == "Tag"));
-            Assert.IsTrue(result.Any(x => x.Name == "Tag2"));
-        }
-
-        [Test]
-        public void TagGroups_ContainsAllUniqueTagGroups()
+        public void GetAllTagGroups_ReturnsAllUniqueTagGroups()
         {
             TagGroup group = TestUtil.TestTagGroups[1];
 
             _database.CreateTagGroup(group);
 
-            IReadOnlyCollection<TagGroup> result = null;
-            _database.TagGroups().ToCollection().Subscribe(x => result = x);
+            var result = _database.GetAllTagGroups();
 
-            Assert.AreEqual(result.Count, 2);
+            Assert.AreEqual(result.Count(), 2);
             Assert.That(result.Contains(group));
             Assert.That(result.Contains(new TagGroup(Tag.DefaultGroupName)));
         }

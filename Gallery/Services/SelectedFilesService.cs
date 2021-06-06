@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
 
     using DynamicData;
@@ -10,31 +11,25 @@
 
     using Splat;
 
-    // File collection can change with:
-    //  - File system updates
-    //  - User data updates
-    //    ^ listen for events from another service?
-    //
-    //  - Changes to selected folders
-    //  - Changes to search parameters
-    //    ^ Method calls to this service?
     public class SelectedFilesService : ISelectedFilesService
     {
-        private IDatabaseService _dbService;
+        private IDataService _dbService;
         private IFileSystemService _fsService;
 
         private ISourceCache<GalleryFile, string> _files;
-        private FileCollection _selectedFiles;
+        private FileCollection _params;
 
-        public SelectedFilesService(IDatabaseService? dbService = null, IFileSystemService? fsService = null)
+        public SelectedFilesService(IDataService? dbService = null, IFileSystemService? fsService = null)
         {
-            _dbService = dbService ?? Locator.Current.GetService<IDatabaseService>();
+            _dbService = dbService ?? Locator.Current.GetService<IDataService>();
             _fsService = fsService ?? Locator.Current.GetService<IFileSystemService>();
 
-            _files = new SourceCache<GalleryFile, string>(x => x.FullPath);
-            _selectedFiles = new FileCollection() { IncludeUntracked = true };
+            _params = new FileCollection() { IncludeUntracked = true };
 
-            _dbService.OnChange += OnDatabaseChanged;
+            _files = new SourceCache<GalleryFile, string>(x => x.FullPath);
+            _files.AddOrUpdate(_dbService.GetFiles());
+
+            _dbService.OnChange += HandleChange;
         }
 
         /// Exposes the set of selected files via a DynamicData observable
@@ -43,58 +38,65 @@
             return _files.Connect();
         }
 
-        /// Replaces the current FileCollection with a new one
-        /// (for example, when running a search, or loading a saved search/collection).
-        ///
-        /// If ignoreSourceFolders is true or if the FileCollection doesn't have any SourceFolders,
-        /// the search parameters will be updated but the previous source folders will be kept.
-        public void LoadFileCollection(FileCollection collection, bool ignoreSourceFolders = false)
-        {
-            if (ignoreSourceFolders || collection.SourceFolders.Count == 0)
-            {
-                collection.SourceFolders = _selectedFiles.SourceFolders;
-            }
+        /////// Replaces the current FileCollection with a new one
+        /////// (for example, when running a search, or loading a saved search/collection).
+        ///////
+        /////// If ignoreSourceFolders is true or if the FileCollection doesn't have any SourceFolders,
+        /////// the search parameters will be updated but the previous source folders will be kept.
+        ////public void LoadFileCollection(FileCollection collection, bool ignoreSourceFolders = false)
+        ////{
+        ////    if (ignoreSourceFolders || collection.SourceFolders.Count == 0)
+        ////    {
+        ////        collection.SourceFolders = _params.SourceFolders;
+        ////    }
 
-            // (Should this make a copy?)
-            _selectedFiles = collection;
-        }
+        ////    // (Should this make a copy?)
+        ////    _params = collection;
+        ////}
 
         /// (Temp?)
         public void SetSearchParameters(IList<ISearchParameter> parameters)
         {
-            _selectedFiles.Parameters = parameters;
-            PopulateFilesCollection();
-        }
+            _params.Parameters = parameters;
 
-        /// (Temp?) Adds the given folder to the current source folder(s) [doesn't check for duplicates].
-        public void AddDirectory(string path)
-        {
-            _selectedFiles.SourceFolders.Add(path);
-            PopulateFilesCollection();
-        }
-
-        /// (Temp?) Removes the given folder from the list of source folders
-        public void RemoveDirectory(string path)
-        {
-            _selectedFiles.SourceFolders.Remove(path);
-            PopulateFilesCollection();
-        }
-
-        // Todo: filter by parameters
-        // (should probably update more efficiently too, instead of reloading the entire collection each time?)
-        private void PopulateFilesCollection()
-        {
             _files.Clear();
 
-            var allFiles = _dbService.GetFiles(_selectedFiles.SourceFolders);
+            AddOrUpdateFiles(_params.Parameters, _params.SourceFolders.ToArray());
+        }
 
-            _files.AddOrUpdate(allFiles.Where(MatchesAllParameters));
-
-            if (_selectedFiles.IncludeUntracked)
+        /// Adds the given folder to the current source folder(s) [doesn't check for duplicates].
+        public void AddDirectory(string path)
+        {
+            if (_params.SourceFolders.Count() == 0)
             {
-                // If SourceFolders is empty, this will show all tracked files and no untracked files;
-                // not sure if that's desirable or not
-                foreach (string path in _selectedFiles.SourceFolders)
+                _files.Clear();
+            }
+
+            _params.SourceFolders.Add(path);
+
+            AddOrUpdateFiles(_params.Parameters, path);
+        }
+
+        /// Removes the given folder from the list of source folders
+        public void RemoveDirectory(string path)
+        {
+            _params.SourceFolders.Remove(path);
+
+            _files.Remove(_files.Items.Where(x => x.Directory == path));
+
+            if (_params.SourceFolders.Count() == 0)
+            {
+                AddOrUpdateFiles(_params.Parameters);
+            }
+        }
+
+        private void AddOrUpdateFiles(IList<ISearchParameter> parameters, params string[] folders)
+        {
+            _files.AddOrUpdate(_dbService.GetFiles(parameters, folders));
+
+            if (_params.IncludeUntracked)
+            {
+                foreach (string path in folders)
                 {
                     IEnumerable<GalleryFile>? files = _fsService.GetFiles(path);
                     if (files != null)
@@ -102,28 +104,44 @@
                         // Skip files that are already tracked & in the collection
                         _files.AddOrUpdate(files
                             .Where(file => !_files.Lookup(file.FullPath).HasValue)
-                            .Where(MatchesAllParameters));
+                            .Where(file => ISearchParameter.MatchesAllParameters(file, parameters)));
                     }
                 }
             }
         }
 
-        private bool MatchesAllParameters(GalleryFile file)
+        // Todo: split (separate handler method for each change type/entity combo?)
+        private void HandleChange(object? sender, DataChangedEventArgs e)
         {
-            foreach (ISearchParameter param in _selectedFiles.Parameters)
+            DataChange change = e.Change;
+
+            if (change.Reason == Models.ChangeReason.Add && change.EntityType == ChangeEntity.Tag)
             {
-                if (!param.Matches(file))
+                _files.Edit(updater =>
                 {
-                    return false;
+                    foreach (string file in change.AffectedFiles)
+                    {
+                        var lookup = _files.Lookup(file);
+                        if (lookup.HasValue && lookup.Value is TrackedFile trackedFile)
+                        {
+                            trackedFile.Tags.Add((Tag)change.Item);
+                            _files.AddOrUpdate(trackedFile);
+
+                            // If we introduce "not" search params, may need to remove file from _files
+                            // if the update means it not longer matches
+                        }
+                    }
+                });
+            }
+            else if (change.Reason == Models.ChangeReason.Add && change.EntityType == ChangeEntity.File)
+            {
+                TrackedFile file = (TrackedFile)change.Item;
+                if (_params.SourceFolders.Contains(file.Directory)
+                    && ISearchParameter.MatchesAllParameters(file, _params.Parameters))
+                {
+                    _files.AddOrUpdate(file);
                 }
             }
-
-            return true;
-        }
-
-        private void OnDatabaseChanged(object? sender, EventArgs e)
-        {
-            PopulateFilesCollection();
         }
     }
 }

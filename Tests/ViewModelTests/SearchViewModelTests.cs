@@ -12,7 +12,7 @@
 
     internal class SearchViewModelTests
     {
-        private Mock<IDatabaseService> _mockDb;
+        private Mock<IDataService> _mockDb;
         private Mock<ISelectedFilesService> _mockSf;
 
         private SearchViewModel _vm;
@@ -34,9 +34,9 @@
         }
 
         [Test]
-        public void FieldsAreValidOnActivation()
+        public void FieldsAreValidOnActivationIfDbContainsTags()
         {
-            Assert.IsNotNull(_vm.SelectedTag?.Name);
+            Assert.IsNotNull(_vm.SelectedTag.Name);
             Assert.IsNotNull(_vm.SelectedValue);
         }
 

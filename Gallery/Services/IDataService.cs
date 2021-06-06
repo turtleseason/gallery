@@ -7,18 +7,17 @@
 
     using Gallery.Models;
 
-    public interface IDatabaseService
+    public interface IDataService
     {
-        event EventHandler? OnChange;
+        event EventHandler<DataChangedEventArgs> OnChange;
 
         IObservable<IChangeSet<string, string>> TrackedFolders();
         IObservable<bool> IsTracked(string folderPath);
 
-        IObservable<IChangeSet<Tag, Tag>> Tags();
-        IObservable<IChangeSet<Tag, string>> TagNames();
-        IObservable<IChangeSet<TagGroup, string>> TagGroups();
+        IEnumerable<TrackedFile> GetFiles(IEnumerable<ISearchParameter>? searchParams = null, params string[] folders);
 
-        IEnumerable<TrackedFile> GetFiles(IEnumerable<string> folders);
+        IEnumerable<Tag> GetAllTags();
+        IEnumerable<TagGroup> GetAllTagGroups();
 
         void TrackFolder(string folderPath);
         void UntrackFolder(string folderPath);

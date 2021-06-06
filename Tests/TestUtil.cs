@@ -31,26 +31,17 @@
         /// Returns a mock database pre-populated with some fake data.
         public static TestDatabaseUtils GetMockDatabase(bool strictMode)
         {
-            var mockDb = new Mock<IDatabaseService>(strictMode ? MockBehavior.Strict : MockBehavior.Loose);
+            var mockDb = new Mock<IDataService>(strictMode ? MockBehavior.Strict : MockBehavior.Loose);
 
-            var tagGroups = new SourceCache<TagGroup, string>(x => x.Name);
-            tagGroups.AddOrUpdate(TestTagGroups);
-            mockDb.Setup(mock => mock.TagGroups()).Returns(tagGroups.Connect());
+            mockDb.Setup(x => x.GetAllTags()).Returns(TestTags);
+            mockDb.Setup(x => x.GetAllTagGroups()).Returns(TestTagGroups);
 
-            var tagsNames = new SourceCache<Tag, string>(x => x.Name);
-            tagsNames.AddOrUpdate(TestTags.Select(x => new Tag(x.Name, group: x.Group)).Distinct());
-            mockDb.Setup(mock => mock.TagNames()).Returns(tagsNames.Connect());
-
-            var tags = new SourceCache<Tag, Tag>(x => new Tag(x.Name, x.Value));
-            tags.AddOrUpdate(TestTags);
-            mockDb.Setup(mock => mock.Tags()).Returns(tags.Connect());
-
-            return new TestDatabaseUtils { Db = mockDb, TagGroups = tagGroups };
+            return new TestDatabaseUtils { Db = mockDb };
         }
 
         public class TestDatabaseUtils
         {
-            public Mock<IDatabaseService> Db { get; init; }
+            public Mock<IDataService> Db { get; init; }
             public ISourceCache<TagGroup, string> TagGroups { get; init; }
             ////public ISourceCache<string, string> TrackedFolders { get; init; }
         }

@@ -15,12 +15,12 @@
     {
         private FolderListItemViewModel _vm;
 
-        private Mock<IDatabaseService> _mockDb;
+        private Mock<IDataService> _mockDb;
 
         [SetUp]
         public void SetUp()
         {
-            _mockDb = new Mock<IDatabaseService>(MockBehavior.Strict);
+            _mockDb = new Mock<IDataService>(MockBehavior.Strict);
             _vm = null;
         }
 
