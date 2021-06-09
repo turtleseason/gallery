@@ -4,6 +4,7 @@
     using System.Diagnostics;
     using System.Linq;
     using System.Reactive.Linq;
+    using System.Threading.Tasks;
 
     using DynamicData;
 
@@ -55,7 +56,7 @@
             _vm.SelectedItems.AddRange(_vm.Items);
             var expectedPaths = _vm.SelectedItems.Select(x => x.File.FullPath).ToArray();
 
-            _mockDb.Setup(mock => mock.AddTag(tag, expectedPaths));
+            _mockDb.Setup(mock => mock.AddTag(tag, expectedPaths)).Returns(Task.CompletedTask);
 
             _vm.AddTagCommand.Execute().Subscribe();
 

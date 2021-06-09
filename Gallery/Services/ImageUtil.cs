@@ -6,7 +6,9 @@
     using System.Drawing.Imaging;
     using System.IO;
     using System.Linq;
+    using System.Threading.Tasks;
 
+    using Avalonia;
     using Avalonia.Media.Imaging;
 
     public static class ImageUtil
@@ -15,7 +17,7 @@
 
         private static readonly ISet<string> _knownImageExtensions = GetKnownExtensions();
 
-        public static Bitmap? LoadBitmap(string path)
+        public static async Task<Bitmap?> LoadBitmap(string path)
         {
             // Save some time by skipping files unlikely to be successfully decoded
             if (!_knownImageExtensions.Contains(Path.GetExtension(path).ToLower()))
@@ -23,27 +25,30 @@
                 return null;
             }
 
-            // Bitmap.DecodeToWidth/Height throws NullReferenceException, Bitmap ctor throws ArgumentException
-            try
+            return await Task.Run(() =>
             {
-                using (Stream s = File.OpenRead(path))
+                // Bitmap.DecodeToWidth/Height throws NullReferenceException, Bitmap ctor throws ArgumentException
+                try
                 {
-                    return new Bitmap(s);
+                    using (Stream s = File.OpenRead(path))
+                    {
+                        return new Bitmap(s);
+                    }
                 }
-            }
-            catch (ArgumentException)
-            {
-                // Not an image (that we know how to parse)
-                return null;
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e.GetType() + " " + e.Message);
-                return null;
-            }
+                catch (ArgumentException)
+                {
+                    // Not an image (that we know how to parse)
+                    return null;
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e.GetType() + " " + e.Message);
+                    return null;
+                }
+            });
         }
 
-        public static Bitmap? LoadThumbnail(string path)
+        public static async Task<Bitmap?> LoadThumbnail(string path)
         {
             // Save some time by skipping files unlikely to be successfully decoded
             if (!_knownImageExtensions.Contains(Path.GetExtension(path).ToLower()))
@@ -51,23 +56,37 @@
                 return null;
             }
 
-            try
+            return await Task.Run(() =>
             {
-                using (Stream s = File.OpenRead(path))
+                try
                 {
-                    return Bitmap.DecodeToHeight(s, 200);
+                    using (Stream s = File.OpenRead(path))
+                    {
+                        return Bitmap.DecodeToHeight(s, 200);
+                    }
                 }
-            }
-            catch (NullReferenceException)
+                catch (NullReferenceException)
+                {
+                    // Not an image (that we know how to parse)
+                    return null;
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e.GetType() + " " + e.Message);
+                    return null;
+                }
+            });
+        }
+
+        public static async Task SaveThumbnail(Bitmap bitmap, string savePath, PixelSize thumbnailSize)
+        {
+            await Task.Run(() =>
             {
-                // Not an image (that we know how to parse)
-                return null;
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e.GetType() + " " + e.Message);
-                return null;
-            }
+                using (Stream s = File.Create(savePath))
+                {
+                    bitmap.CreateScaledBitmap(thumbnailSize).Save(s);
+                }
+            });
         }
 
         // Todo: is there a way to get specifically the formats that Avalonia/Skia can decode?

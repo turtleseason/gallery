@@ -5,6 +5,7 @@
     using System.Configuration;
     using System.IO;
     using System.Linq;
+    using System.Threading.Tasks;
 
     using Dapper;
 
@@ -33,14 +34,15 @@
         ///
         // Todo: allow excluding files, auto-adding new files
         // (Return true/false for success/failure? Or throw exception if failed...?)
-        public int AddFolder(string folderPath)
+        public async Task<int> AddFolder(string folderPath)
         {
             string addFolderSql = @"INSERT INTO Folder(path) VALUES(@Path);
                                     SELECT last_insert_rowid();";
 
             using (var conn = new SqliteConnection(ConnectionString))
             {
-                return conn.Query<int>(addFolderSql, new { Path = folderPath }).First();
+                var resultRowId = await conn.QueryAsync<int>(addFolderSql, new { Path = folderPath });
+                return resultRowId.Single();
             }
         }
 
@@ -54,17 +56,17 @@
             }
         }
 
-        public void AddFile(string filePath, int folderId, string? thumbnailPath = null)
+        public async Task AddFile(string filePath, int folderId, string? thumbnailPath = null)
         {
             string addFileSql = @"INSERT INTO File(path, folder_id, thumbnail) VALUES(@Path, @FolderId, @Thumbnail)";
 
             using (var conn = new SqliteConnection(ConnectionString))
             {
-                conn.Execute(addFileSql, new { Path = filePath, FolderId = folderId, Thumbnail = thumbnailPath });
+                await conn.ExecuteAsync(addFileSql, new { Path = filePath, FolderId = folderId, Thumbnail = thumbnailPath });
             }
         }
 
-        public void AddTag(Tag tag, params string[] filePaths)
+        public async Task AddTag(Tag tag, params string[] filePaths)
         {
             string insertSql = @"
                 /* Create tag if necessary */
@@ -90,7 +92,7 @@
 
             using (var conn = new SqliteConnection(ConnectionString))
             {
-                conn.Execute(insertSql, parameters);
+                await conn.ExecuteAsync(insertSql, parameters);
             }
         }
 

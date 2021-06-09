@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     using DynamicData;
 
@@ -19,10 +20,10 @@
         IEnumerable<Tag> GetAllTags();
         IEnumerable<TagGroup> GetAllTagGroups();
 
-        void TrackFolder(string folderPath);
+        Task TrackFolder(string folderPath);
         void UntrackFolder(string folderPath);
 
-        void AddTag(Tag tag, params string[] filePaths);
+        Task AddTag(Tag tag, params string[] filePaths);
         void CreateTagGroup(TagGroup group);
     }
 }

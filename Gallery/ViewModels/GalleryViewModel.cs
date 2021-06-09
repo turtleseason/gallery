@@ -77,7 +77,7 @@
 
             if (tag != null)
             {
-                _dbService.AddTag((Tag)tag, files);
+                await _dbService.AddTag((Tag)tag, files);
             }
         }
     }

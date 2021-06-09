@@ -48,8 +48,8 @@
                 .Count()
                 .Select(x => x > 0);
 
-            TrackSelectedFoldersCommand = ReactiveCommand.Create(TrackSelectedFolders, canExecute);
-            TrackFolderCommand = ReactiveCommand.Create((FolderListItemViewModel vm) => TrackFolder(vm));
+            TrackFolderCommand = ReactiveCommand.CreateFromObservable<FolderListItemViewModel, Unit>(TrackFolder, canExecute);
+            TrackSelectedFoldersCommand = ReactiveCommand.CreateFromObservable(TrackSelectedFolders, canExecute);
 
             selectedItemsObservable.Subscribe(changes => UpdateSelectedFolders(changes));
 
@@ -98,26 +98,24 @@
             }
         }
 
-        private void TrackFolder(FolderListItemViewModel vm)
+        private IObservable<Unit> TrackFolder(FolderListItemViewModel vm)
         {
             Debug.WriteLine($"Tracking {vm.Name}");
 
             if (!_trackedFolders.Contains(vm.FullPath))
             {
-                _dbService.TrackFolder(vm.FullPath);
+                return Observable.StartAsync(() => _dbService.TrackFolder(vm.FullPath), RxApp.MainThreadScheduler);
             }
             else
             {
                 Debug.WriteLine("  Already tracked - skipping");
+                return Observable.Return(Unit.Default);
             }
         }
 
-        private void TrackSelectedFolders()
+        private IObservable<Unit> TrackSelectedFolders()
         {
-            foreach (FolderListItemViewModel vm in SelectedItems)
-            {
-                TrackFolder(vm);
-            }
+            return SelectedItems.Select(x => TrackFolder(x)).Concat();
         }
     }
 }

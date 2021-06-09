@@ -43,19 +43,19 @@
         {
             _file = file;
 
-            // Todo: revisit this
-            Observable.FromAsync(async () => await Task.Run(LoadThumbnail)).Subscribe(bitmap => Thumbnail = bitmap);
+            Observable.FromAsync(LoadThumbnail, RxApp.MainThreadScheduler)
+                .Subscribe(bitmap => Thumbnail = bitmap);
         }
 
         public GalleryFile File => _file;
 
         public Bitmap? Thumbnail { get => _thumbnail; set => this.RaiseAndSetIfChanged(ref _thumbnail, value); }
 
-        public Bitmap? LoadThumbnail()
+        public async Task<Bitmap?> LoadThumbnail()
         {
             if (File.Thumbnail != null)
             {
-                return ImageUtil.LoadBitmap(File.Thumbnail);
+                return await ImageUtil.LoadBitmap(File.Thumbnail);
             }
             else if (File is TrackedFile)
             {
@@ -64,7 +64,7 @@
             }
             else
             {
-                return ImageUtil.LoadThumbnail(File.FullPath);
+                return await ImageUtil.LoadThumbnail(File.FullPath);
             }
         }
     }

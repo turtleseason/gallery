@@ -5,6 +5,7 @@
     using System.IO;
     using System.Linq;
     using System.Reactive.Linq;
+    using System.Threading.Tasks;
 
     using DynamicData;
 
@@ -52,7 +53,7 @@
         [Test]
         public void TrackSelectedFoldersCommand_TracksAllSelectedFolders()
         {
-            _mockDb.Setup(mock => mock.TrackFolder(It.IsAny<string>()));
+            _mockDb.Setup(mock => mock.TrackFolder(It.IsAny<string>())).Returns(Task.CompletedTask);
 
             _vm = new FolderListViewModel(dbService: _mockDb.Object, fsService: _mockFileSystem.Object, sfService: _mockFiles.Object);
 

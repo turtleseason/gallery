@@ -6,6 +6,8 @@
     using System.IO;
     using System.Linq;
     using System.Reactive.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     using Avalonia;
     using Avalonia.Media.Imaging;
@@ -82,7 +84,7 @@
 
         /// Adds the given folder and all the files in it to the database (non-recursively).
         /// Does nothing (prints a warning) if the folder is already tracked.
-        public void TrackFolder(string folderPath)
+        public async Task TrackFolder(string folderPath)
         {
             if (_trackedFolders.Lookup(folderPath).HasValue)
             {
@@ -97,11 +99,11 @@
                 return;
             }
 
-            int folderId = _database.AddFolder(folderPath);
+            int folderId = await _database.AddFolder(folderPath);
 
             foreach (var file in files)
             {
-                TrackFile(file.FullPath, folderId);
+                await TrackFile(file.FullPath, folderId);
             }
 
             _trackedFolders.AddOrUpdate(folderPath);
@@ -119,14 +121,14 @@
         /// Adds a tag to the given files, skipping any untracked files.
         /// Skips duplicate tags (where the given file already has a tag with the same name and value);
         /// a change event may be raised for a duplicate tag, though.
-        public void AddTag(Tag tag, params string[] filePaths)
+        public async Task AddTag(Tag tag, params string[] filePaths)
         {
             if (filePaths.Length == 0)
             {
                 return;
             }
 
-            _database.AddTag(tag, filePaths);
+            await _database.AddTag(tag, filePaths);
 
             // Todo: get the actual tag obj back from database (in case group is inaccurate)
             // [or keep tag -> tagGroups map in-memory for easier reference]
@@ -141,7 +143,7 @@
             _database.AddTagGroup(group);
         }
 
-        private void TrackFile(string path, int folderId)
+        private async Task TrackFile(string path, int folderId)
         {
             var file = new TrackedFile() { FullPath = path };
 
@@ -149,17 +151,17 @@
             file.Tags.Add(new Tag("Date", info.CreationTime.ToString()));
             file.Tags.Add(new Tag("Edited", info.LastWriteTime.ToString()));
 
-            Bitmap? img = ImageUtil.LoadBitmap(path);
+            Bitmap? img = await ImageUtil.LoadBitmap(path);
             if (img != null)
             {
-                GetImageInfo(file, img, Path.Combine(_thumbnailFolder, folderId.ToString()));
+                await AddImageInfo(file, img, Path.Combine(_thumbnailFolder, folderId.ToString()));
             }
 
-            _database.AddFile(path, folderId, file.Thumbnail);
+            await _database.AddFile(path, folderId, file.Thumbnail);
 
             foreach (var tag in file.Tags)
             {
-                _database.AddTag(tag, path);
+                await _database.AddTag(tag, path);
             }
 
             // Make sure the tags on the created TrackedFile match the tag groups in the DB
@@ -168,12 +170,13 @@
             OnChange?.Invoke(this, new DataChangedEventArgs(change));
         }
 
-        private void GetImageInfo(TrackedFile file, Bitmap img, string thumbnailFolder)
+        // Adds image-specific default tags to the TrackedFile and saves a thumbnail.
+        private async Task AddImageInfo(TrackedFile file, Bitmap bitmap, string thumbnailFolder)
         {
-            file.Tags.Add(new Tag("Width", img.PixelSize.Width.ToString()));
-            file.Tags.Add(new Tag("Height", img.PixelSize.Height.ToString()));
+            file.Tags.Add(new Tag("Width", bitmap.PixelSize.Width.ToString()));
+            file.Tags.Add(new Tag("Height", bitmap.PixelSize.Height.ToString()));
 
-            var aspect = img.PixelSize.AspectRatio;
+            var aspect = bitmap.PixelSize.AspectRatio;
             PixelSize thumbnailSize = aspect > 1
                 ? new PixelSize(200, (int)(200 / aspect))
                 : new PixelSize((int)(200 * aspect), 200);
@@ -181,10 +184,8 @@
             Directory.CreateDirectory(thumbnailFolder);
 
             file.Thumbnail = Path.Combine(thumbnailFolder, Path.GetFileName(file.FullPath).Replace('.', '_') + ".png");
-            using (Stream s = File.Create(file.Thumbnail))
-            {
-                img.CreateScaledBitmap(thumbnailSize).Save(s);
-            }
+
+            await ImageUtil.SaveThumbnail(bitmap, file.Thumbnail, thumbnailSize);
         }
     }
 }

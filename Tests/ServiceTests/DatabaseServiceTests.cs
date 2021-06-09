@@ -8,6 +8,7 @@ namespace Tests
     using System.Linq;
     using System.Reactive.Linq;
     using System.Reflection;
+    using System.Threading.Tasks;
 
     using Dapper;
 
@@ -85,11 +86,11 @@ namespace Tests
         }
 
         [Test]
-        public void TrackFolder_AddsFolderAndFilesToDB()
+        public async Task TrackFolder_AddsFolderAndFilesToDB()
         {
             string folderPath = @"C:\fakepath";
 
-            _database.TrackFolder(folderPath);
+            await _database.TrackFolder(folderPath);
 
             var folders = _conn.Query<string>("SELECT path FROM Folder").ToList();
             Assert.AreEqual(folders.Count, 1);
@@ -101,13 +102,13 @@ namespace Tests
         }
 
         [Test]
-        public void UntrackFolder_DeletesTrackedFolderAndFiles()
+        public async Task UntrackFolder_DeletesTrackedFolderAndFiles()
         {
             string untrackedPath = @"C:\fakepath";
             string trackedPath = @"C:\other";
 
-            _database.TrackFolder(untrackedPath);
-            _database.TrackFolder(trackedPath);
+            await _database.TrackFolder(untrackedPath);
+            await _database.TrackFolder(trackedPath);
 
             _database.UntrackFolder(untrackedPath);
 
@@ -124,12 +125,12 @@ namespace Tests
         }
 
         [Test]
-        public void GetFiles_FiltersByFolder()
+        public async Task GetFiles_FiltersByFolder()
         {
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
             foreach (string path in paths)
             {
-                _database.TrackFolder(path);
+                await _database.TrackFolder(path);
             }
 
             var path1Files = _database.GetFiles(folders: paths[0]).Select(x => x.FullPath);
@@ -140,16 +141,16 @@ namespace Tests
         }
 
         [Test]
-        public void GetFiles_FiltersBySearchParameters()
+        public async Task GetFiles_FiltersBySearchParameters()
         {
             string path = @"C:\fakepath";
             string[] taggedFiles = { Path.Combine(path, "File1.png"), Path.Combine(path, "a.txt") };
 
             Tag tag = TestUtil.TestTags[2];
 
-            _database.TrackFolder(path);
+            await _database.TrackFolder(path);
             _database.CreateTagGroup(tag.Group);
-            _database.AddTag(tag, taggedFiles);
+            await _database.AddTag(tag, taggedFiles);
 
             ISearchParameter[] searchParameters = { new Parameter.Tagged(tag) };
 
@@ -159,12 +160,12 @@ namespace Tests
         }
 
         [Test]
-        public void GetFiles_ReturnsAllFilesWhenNoFolderSpecified()
+        public async Task GetFiles_ReturnsAllFilesWhenNoFolderSpecified()
         {
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
             foreach (string path in paths)
             {
-                _database.TrackFolder(path);
+                await _database.TrackFolder(path);
             }
 
             var files = _database.GetFiles().Select(x => x.FullPath);
@@ -173,14 +174,14 @@ namespace Tests
         }
 
         [Test]
-        public void GetFiles_ReturnsFileTags()
+        public async Task GetFiles_ReturnsFileTags()
         {
             Tag tag = new Tag("I am a tag", "with a value");
             string folder = @"C:\fakepath";
             string file = GetMockFilePaths(folder).First();
 
-            _database.TrackFolder(folder);
-            _database.AddTag(tag, file);
+            await _database.TrackFolder(folder);
+            await _database.AddTag(tag, file);
 
             IEnumerable<TrackedFile> results = _database.GetFiles(folders: folder);
             foreach (TrackedFile result in results)
@@ -193,12 +194,12 @@ namespace Tests
         }
 
         [Test]
-        public void TrackedFolders_ReturnsAllCurrentFolders()
+        public async Task TrackedFolders_ReturnsAllCurrentFolders()
         {
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
             foreach (string path in paths)
             {
-                _database.TrackFolder(path);
+                await _database.TrackFolder(path);
             }
 
             IReadOnlyCollection<string> result = null;
@@ -208,12 +209,12 @@ namespace Tests
         }
 
         [Test]
-        public void TrackedFolders_UpdatesOnTrackAndUntrack()
+        public async Task TrackedFolders_UpdatesOnTrackAndUntrack()
         {
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
 
-            _database.TrackFolder(paths[0]);
-            _database.TrackFolder(paths[1]);
+            await _database.TrackFolder(paths[0]);
+            await _database.TrackFolder(paths[1]);
 
             IReadOnlyCollection<string> result = null;
             _database.TrackedFolders().ToCollection().Subscribe(folders => result = folders);
@@ -221,20 +222,20 @@ namespace Tests
             _database.UntrackFolder(paths[0]);
             Assert.That(result, Is.EquivalentTo(new string[] { paths[1] }));
 
-            _database.TrackFolder(paths[2]);
+            await _database.TrackFolder(paths[2]);
             Assert.That(result, Is.EquivalentTo(new string[] { paths[1], paths[2] }));
 
-            _database.TrackFolder(paths[0]);
+            await _database.TrackFolder(paths[0]);
             Assert.That(result, Is.EquivalentTo(paths));
         }
 
         [Test]
-        public void IsTracked_GivesCorrectInitialValue()
+        public async Task IsTracked_GivesCorrectInitialValue()
         {
             string untrackedPath = @"C:\fakepath";
             string trackedPath = @"C:\other";
 
-            _database.TrackFolder(trackedPath);
+            await _database.TrackFolder(trackedPath);
 
             bool? result = null;
             _database.IsTracked(untrackedPath).Take(1).Subscribe(x => result = x);
@@ -245,14 +246,14 @@ namespace Tests
         }
 
         [Test]
-        public void IsTracked_UpdatesOnTrackAndUntrack()
+        public async Task IsTracked_UpdatesOnTrackAndUntrack()
         {
             string path = @"C:\fakepath";
 
             bool? result = null;
             _database.IsTracked(path).Subscribe(x => result = x);
 
-            _database.TrackFolder(path);
+            await _database.TrackFolder(path);
             Assert.IsTrue(result);
 
             _database.UntrackFolder(path);
@@ -260,19 +261,19 @@ namespace Tests
         }
 
         [Test]
-        public void GetAllTags_ReturnsAllUniqueTags()
+        public async Task GetAllTags_ReturnsAllUniqueTags()
         {
             string[] paths = GetMockFilePaths(@"C:\fakepath").ToArray();
 
-            _database.TrackFolder(@"C:\fakepath");
+            await _database.TrackFolder(@"C:\fakepath");
 
             TagGroup group = TestUtil.TestTagGroups[1];
             _database.CreateTagGroup(group);
 
             Tag[] tags = { new Tag("Tag"), new Tag("Tag2", "Potato", group), new Tag("Tag2", group: group) };
-            _database.AddTag(tags[0], paths);
-            _database.AddTag(tags[1], paths[0], paths[1]);
-            _database.AddTag(tags[2], paths[2]);
+            await _database.AddTag(tags[0], paths);
+            await _database.AddTag(tags[1], paths[0], paths[1]);
+            await _database.AddTag(tags[2], paths[2]);
 
             var result = _database.GetAllTags();
 
