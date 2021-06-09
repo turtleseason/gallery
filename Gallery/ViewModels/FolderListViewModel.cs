@@ -115,7 +115,7 @@
 
         private IObservable<Unit> TrackSelectedFolders()
         {
-            return SelectedItems.Select(x => TrackFolder(x)).Concat();
+            return SelectedItems.ToList().Select(x => TrackFolder(x)).Concat();
         }
     }
 }
