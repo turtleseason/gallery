@@ -1,14 +1,16 @@
 ﻿namespace Gallery.DesignData
 {
     using System.Collections.ObjectModel;
+    using System.Linq;
 
     using Gallery.Models;
+    using Gallery.ViewModels;
 
     public class DesignGalleryViewModel
     {
         public DesignGalleryViewModel()
         {
-            Items = new ObservableCollection<GalleryFile>()
+            var items = new GalleryFile[]
             {
                 new TrackedFile() { FullPath = @"C:\folder\tracked_file.gif" },
                 new TrackedFile() { FullPath = @"C:\folder\another_tracked_file.png" },
@@ -19,11 +21,14 @@
                 new GalleryFile() { FullPath = @"C:\folder\file4.gif" },
             };
 
-            (Items[0] as TrackedFile)!.Tags.Add(new Tag("Tag", "Value"));
-            (Items[0] as TrackedFile)!.Tags.Add(new Tag("Also Tag", group: new TagGroup("Group1", "#eebbee")));
-            (Items[0] as TrackedFile)!.Tags.Add(new Tag("Looooooooooooooooooooooooong tag"));
+            (items[0] as TrackedFile)!.Tags.Add(new Tag("Tag", "Value"));
+            (items[0] as TrackedFile)!.Tags.Add(new Tag("Also Tag", group: new TagGroup("Group1", "#eebbee")));
+            (items[0] as TrackedFile)!.Tags.Add(new Tag("Looooooooooooooooooooooooong tag"));
+
+            Items = new ObservableCollection<GalleryThumbnailViewModel>(items.Select(file =>
+                new GalleryThumbnailViewModel(file)));
         }
 
-        public ObservableCollection<GalleryFile> Items { get; }
+        public ObservableCollection<GalleryThumbnailViewModel> Items { get; }
     }
 }

@@ -1,6 +1,7 @@
 ﻿namespace Gallery.ViewModels
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
     using System.Reactive.Linq;
@@ -21,6 +22,7 @@
 
         private GalleryFile _file;
         private Bitmap? _thumbnail;
+        private bool _isSelected = false;
 
         static GalleryThumbnailViewModel()  // temp
         {
@@ -49,7 +51,12 @@
 
         public GalleryFile File => _file;
 
+        // Use this to avoid binding errors from binding directly to File.Tags with untracked files
+        public ISet<Tag>? Tags => (File as TrackedFile)?.Tags;
+
         public Bitmap? Thumbnail { get => _thumbnail; set => this.RaiseAndSetIfChanged(ref _thumbnail, value); }
+
+        public bool IsSelected { get => _isSelected; set => this.RaiseAndSetIfChanged(ref _isSelected, value); }
 
         public async Task<Bitmap?> LoadThumbnail()
         {

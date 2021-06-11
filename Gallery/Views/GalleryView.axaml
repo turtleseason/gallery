@@ -4,21 +4,54 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Gallery.ViewModels"
              xmlns:m="using:Gallery.Models"
+             xmlns:v="clr-namespace:Gallery.Views"
              xmlns:c="using:Gallery.Converters"
              xmlns:dd="using:Gallery.DesignData"
              mc:Ignorable="d" d:DesignWidth="680" d:DesignHeight="550"
              x:Class="Gallery.Views.GalleryView">
 
-    <ListBox SelectedItems="{Binding SelectedItems}"
-             Items="{Binding Items}"
-             SelectionMode="Multiple"
-             ClipToBounds="True">
-        <ListBox.ItemsPanel>
-            <ItemsPanelTemplate>
-                <WrapPanel/>
-            </ItemsPanelTemplate>
-        </ListBox.ItemsPanel>
-    </ListBox>
+    <DockPanel Background="#272727">
+        <v:SelectedFilesView DockPanel.Dock="Top"
+                             IsVisible="{Binding HasSelection^}"
+                             Background="#1a1a1a"/>
+    
+        <ScrollViewer Padding="0,0,10,0">
+            <ItemsRepeater Items="{Binding Items}" Margin="10">
+                
+                <ItemsRepeater.Layout>
+                    <WrapLayout HorizontalSpacing="20" VerticalSpacing="25" />
+                </ItemsRepeater.Layout>
+                
+                <ItemsRepeater.ItemTemplate>
+                    <DataTemplate>
+                        <!-- Temp (not sure if this should remain a Button or not) -->
+                        <Button Command="{Binding $parent[v:GalleryView].DataContext.ToggleSelectCommand}"
+                                CommandParameter="{Binding}"
+                                Classes.isSelected="{Binding IsSelected}"
+                                BorderThickness="2.5">
+                            
+                            <Button.Styles>
+                                <Style Selector="Button.isSelected">
+                                    <Setter Property="Background" Value="#999999"/>
+                                    <Setter Property="BorderBrush" Value="White"/>
+                                </Style>
+                                <Style Selector="Button.isSelected:pointerover
+                                                 /template/ ContentPresenter#PART_ContentPresenter">
+                                    <Setter Property="Background" Value="#999999"/>
+                                    <Setter Property="BorderBrush" Value="White"/>
+                                </Style>
+                            </Button.Styles>
+                            
+                            <v:GalleryThumbnailView />
+                            
+                        </Button>
+                    </DataTemplate>
+                </ItemsRepeater.ItemTemplate>
+                
+            </ItemsRepeater>
+        </ScrollViewer>
+
+    </DockPanel>
 
     <Design.DataContext>
         <dd:DesignGalleryViewModel/>

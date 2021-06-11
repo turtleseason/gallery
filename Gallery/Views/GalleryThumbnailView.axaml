@@ -34,7 +34,7 @@
                    Width="200"
                    Margin="0,8,0,5"/>
 
-        <ItemsControl Items="{Binding File.Tags}">
+        <ItemsControl Items="{Binding Tags}">
             <ItemsControl.Styles>
                 <Style Selector="Border">
                     <Setter Property="Margin" Value="0,5,5,0"/>
