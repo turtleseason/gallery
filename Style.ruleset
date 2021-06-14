@@ -11,6 +11,8 @@
     
     <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers.ReadabilityRules">
         <Rule Id="SA1101"  Action="None" />             <!-- Prefix local calls with this -->
+        <Rule Id="SA1116"  Action="None" />             <!-- Split parameters should start on line after declaration -->
+        <Rule Id="SA1117"  Action="None" />             <!-- Parameters should be on same line or separate lines -->
         <Rule Id="SA1128"  Action="None" />             <!-- Put constructor initializers on their own line -->
         <Rule Id="SA1136"  Action="None" />             <!-- Enum values should be on separate lines -->
     </Rules>

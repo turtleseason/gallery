@@ -1,11 +1,13 @@
 ﻿namespace Gallery.ViewModels
 {
     using System;
-    using System.Collections.Generic;
     using System.Collections.ObjectModel;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
+    using System.Reactive;
     using System.Reactive.Linq;
+    using System.Threading.Tasks;
 
     using DynamicData;
 
@@ -37,13 +39,8 @@
 
             this.WhenAnyValue(x => x.IsExpanded)
                 .Where(x => x)
-                .Subscribe(_ =>
-                {
-                    foreach (var child in Children)
-                    {
-                        child.LoadChildren();
-                    }
-                });
+                .Select(x => Unit.Default)
+                .InvokeCommand(ReactiveCommand.CreateFromObservable(LoadDescendants));
         }
 
         public FolderListItemViewModel(string path, IDataService? dbService = null, IFileSystemService? fsService = null)
@@ -57,23 +54,33 @@
 
         public ObservableCollection<FolderListItemViewModel> Children { get; }
 
-        public IObservable<bool> IsTracked { get; init; }
+        public IObservable<bool> IsTracked { get; }
 
         public bool IsExpanded { get => _isExpanded; set => this.RaiseAndSetIfChanged(ref _isExpanded, value); }
 
-        public void LoadChildren()
+        public IObservable<Unit> LoadChildren()
         {
-            if (!_hasLoadedChildren)
+            return Observable.StartAsync(async () =>
             {
-                IEnumerable<string>? childDirectories = _fsService.GetDirectories(FullPath);
-                if (childDirectories != null)
+                if (!_hasLoadedChildren)
                 {
-                    Children.AddRange(childDirectories.Select(path =>
-                        new FolderListItemViewModel(path, dbService: _dbService, fsService: _fsService)));
-                }
+                    var children = await Task.Run(() =>
+                        _fsService.GetDirectories(FullPath)?
+                        .Select(path =>
+                            new FolderListItemViewModel(path, dbService: _dbService, fsService: _fsService)));
 
-                _hasLoadedChildren = true;
-            }
+                    if (children != null)
+                    {
+                        Children.AddRange(children);
+                    }
+                    _hasLoadedChildren = true;
+                }
+            }, RxApp.MainThreadScheduler);
+        }
+
+        public IObservable<Unit> LoadDescendants()
+        {
+            return Children.ToArray().Select(x => x.LoadChildren()).Concat();
         }
     }
 }
