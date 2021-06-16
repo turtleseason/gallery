@@ -5,9 +5,10 @@
              xmlns:rxui="http://reactiveui.net"
              xmlns:local="using:Gallery"
              xmlns:vm="using:Gallery.ViewModels"
+             xmlns:v="using:Gallery.Views"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Gallery.Views.MainShellView">
-    <Grid ColumnDefinitions="300, Auto, *" RowDefinitions="Auto, *">
+    <Grid ColumnDefinitions="300, Auto, *" RowDefinitions="Auto, *, Auto">
         <Grid.Styles>
             <Style Selector="TextBlock.h1">
                 <Setter Property="FontSize" Value="24"/>
@@ -67,6 +68,14 @@
                       ResizeBehavior="PreviousAndNext"
                       ResizeDirection="Columns"
                       ShowsPreview="True"/>
+
+        <ItemsControl Grid.Row="2" Grid.ColumnSpan="3" Items="{Binding ExecutingCommands}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <v:CommandStatusView Background="#171717" DataContext="{Binding}"/>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
     </Grid>
 
     <Design.DataContext>

@@ -8,6 +8,7 @@
     using System.Reactive;
     using System.Reactive.Disposables;
     using System.Reactive.Linq;
+    using System.Reactive.Subjects;
 
     using DynamicData;
     using DynamicData.Aggregation;
@@ -48,8 +49,21 @@
                 .Count()
                 .Select(x => x > 0);
 
+            TrackFoldersProgress = new BehaviorSubject<float?>(null);
+
             TrackFolderCommand = ReactiveCommand.CreateFromObservable<FolderListItemViewModel, Unit>(TrackFolder, canExecute);
             TrackSelectedFoldersCommand = ReactiveCommand.CreateFromObservable(TrackSelectedFolders, canExecute);
+
+            TrackFolderCommand.IsExecuting.Where(x => x)
+                .Subscribe(_ => Interactions.ReportCommandProgress(
+                    TrackFolderCommand.IsExecuting,
+                    Observable.Return("Tracking folder")));
+
+            TrackSelectedFoldersCommand.IsExecuting.Where(x => x)
+                .Subscribe(_ => Interactions.ReportCommandProgress(
+                    TrackSelectedFoldersCommand.IsExecuting,
+                    Observable.Return("Tracking folders"),
+                    TrackFoldersProgress));
 
             selectedItemsObservable.Subscribe(changes => UpdateSelectedFolders(changes));
 
@@ -74,6 +88,8 @@
 
         public ReactiveCommand<FolderListItemViewModel, Unit> TrackFolderCommand { get; }
         public ReactiveCommand<Unit, Unit> TrackSelectedFoldersCommand { get; }
+
+        private BehaviorSubject<float?> TrackFoldersProgress { get; }
 
         private void UpdateSelectedFolders(IChangeSet<FolderListItemViewModel, string> changes)
         {
@@ -115,7 +131,15 @@
 
         private IObservable<Unit> TrackSelectedFolders()
         {
-            return SelectedItems.ToList().Select(x => TrackFolder(x)).Concat();
+            List<FolderListItemViewModel> items = SelectedItems.ToList();
+
+            return items.Select((x, index) => Observable.FromAsync(async () =>
+                {
+                    float progress = (float)index * 100 / items.Count;
+                    TrackFoldersProgress.OnNext(progress);
+                    await TrackFolder(x);
+                }, RxApp.MainThreadScheduler))
+                .Concat();
         }
     }
 }
