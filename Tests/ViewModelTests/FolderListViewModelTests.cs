@@ -2,19 +2,24 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
+    using System.Reactive;
     using System.Reactive.Linq;
     using System.Threading.Tasks;
 
     using DynamicData;
 
+    using Gallery;
     using Gallery.Services;
     using Gallery.ViewModels;
 
     using Moq;
 
     using NUnit.Framework;
+
+    using ReactiveUI;
 
     internal class FolderListViewModelTests
     {
@@ -25,6 +30,14 @@
         private Mock<ISelectedFilesService> _mockFiles;
 
         private ISourceCache<string, string> _trackedFolders;
+
+        private IDisposable _disposable;
+
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            _disposable = Interactions.ShowCommandProgress.RegisterHandler(context => context.SetOutput(Unit.Default));
+        }
 
         [SetUp]
         public void SetUp()
@@ -50,18 +63,31 @@
                 .StartWith(_trackedFolders.Lookup(path).HasValue));
         }
 
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
+        {
+            _disposable.Dispose();
+        }
+
+        public async Task WaitForTopLevelChildrenToLoad()
+        {
+            await Observable.Zip(_vm.Items.Select(x => x.WhenAnyValue(x => x.HasLoadedChildren).Where(x => x)))
+                .Take(1);
+        }
+
         [Test]
-        public void TrackSelectedFoldersCommand_TracksAllSelectedFolders()
+        public async Task TrackSelectedFoldersCommand_TracksAllSelectedFolders()
         {
             _mockDb.Setup(mock => mock.TrackFolder(It.IsAny<string>())).Returns(Task.CompletedTask);
 
             _vm = new FolderListViewModel(dbService: _mockDb.Object, fsService: _mockFileSystem.Object, sfService: _mockFiles.Object);
+            await WaitForTopLevelChildrenToLoad();
 
             IEnumerable<FolderListItemViewModel> items = _vm.Items.Concat(_vm.Items.SelectMany(item => item.Children.Take(2)));
             IEnumerable<FolderListItemViewModel> notSelected = _vm.Items.SelectMany(item => item.Children.TakeLast(item.Children.Count - 2));
             _vm.SelectedItems.Add(items);
 
-            _vm.TrackSelectedFoldersCommand.Execute().Take(1).Subscribe();
+            await _vm.TrackSelectedFoldersCommand.Execute();
 
             foreach (var item in items)
             {
@@ -75,12 +101,13 @@
         }
 
         [Test]
-        public void TrackSelectedFoldersCommand_CanExecute_OnlyWhenUntrackedFoldersAreSelected()
+        public async Task TrackSelectedFoldersCommand_CanExecute_OnlyWhenUntrackedFoldersAreSelected()
         {
             IEnumerable<string> trackedPaths = _mockFileSystem.Object.GetDirectories(@"C:\");
             _trackedFolders.AddOrUpdate(trackedPaths);
 
             _vm = new FolderListViewModel(dbService: _mockDb.Object, fsService: _mockFileSystem.Object, sfService: _mockFiles.Object);
+            await WaitForTopLevelChildrenToLoad();
 
             bool? canExecute = null;
             _vm.TrackSelectedFoldersCommand.CanExecute.Subscribe(x => canExecute = x);
@@ -95,9 +122,10 @@
         }
 
         [Test]
-        public void TrackSelectedFoldersCommand_CanExecute_UpdatesWhenTrackedFoldersChange()
+        public async Task TrackSelectedFoldersCommand_CanExecute_UpdatesWhenTrackedFoldersChange()
         {
             _vm = new FolderListViewModel(dbService: _mockDb.Object, fsService: _mockFileSystem.Object, sfService: _mockFiles.Object);
+            await WaitForTopLevelChildrenToLoad();
 
             var selectedItems = _vm.Items.SelectMany(item => item.Children.Take(2));
             _vm.SelectedItems.Add(selectedItems);

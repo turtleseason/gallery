@@ -58,11 +58,13 @@
 
         public bool IsExpanded { get => _isExpanded; set => this.RaiseAndSetIfChanged(ref _isExpanded, value); }
 
+        public bool HasLoadedChildren { get => _hasLoadedChildren; set => this.RaiseAndSetIfChanged(ref _hasLoadedChildren, value); }
+
         public IObservable<Unit> LoadChildren()
         {
             return Observable.StartAsync(async () =>
             {
-                if (!_hasLoadedChildren)
+                if (!HasLoadedChildren)
                 {
                     var children = await Task.Run(() =>
                         _fsService.GetDirectories(FullPath)?
@@ -73,7 +75,7 @@
                     {
                         Children.AddRange(children);
                     }
-                    _hasLoadedChildren = true;
+                    HasLoadedChildren = true;
                 }
             }, RxApp.MainThreadScheduler);
         }
