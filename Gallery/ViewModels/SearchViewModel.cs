@@ -51,7 +51,7 @@
             this.WhenAnyValue(x => x.SelectedTag)
                 .Subscribe(_ => UpdateValues());
 
-            SelectedTag = Tags.Count() > 1 ? Tags[0] : default;
+            SelectedTag = Tags.Count > 1 ? Tags[0] : default;
             _selectedValue = _defaultOptions[0];
         }
 
@@ -84,13 +84,13 @@
 
             _sfService.SetSearchParameters(new List<ISearchParameter> { searchParameter });
 
-            (HostScreen as MainShellViewModel)?.BackCommand.Execute().Subscribe();
+            (HostScreen as MainShellViewModel)?.GalleryCommand.Execute().Subscribe();
         }
 
         public void ClearSearch()
         {
             _sfService.SetSearchParameters(new List<ISearchParameter>());
-            (HostScreen as MainShellViewModel)?.BackCommand.Execute().Subscribe();
+            (HostScreen as MainShellViewModel)?.GalleryCommand.Execute().Subscribe();
         }
 
         private void UpdateValues()

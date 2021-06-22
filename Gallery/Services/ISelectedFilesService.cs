@@ -2,14 +2,13 @@
 {
     using System;
     using System.Collections.Generic;
-
-    using DynamicData;
+    using System.Collections.ObjectModel;
 
     using Gallery.Models;
 
     public interface ISelectedFilesService
     {
-        IObservable<IChangeSet<GalleryFile, string>> Connect();
+        ReadOnlyObservableCollection<GalleryFile> SelectedFiles();
 
         ////void LoadFileCollection(FileCollection collection, bool ignoreSourceFolders = false);
 

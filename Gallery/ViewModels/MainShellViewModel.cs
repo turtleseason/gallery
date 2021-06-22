@@ -12,13 +12,20 @@
 
     public class MainShellViewModel : ViewModelBase, IScreen
     {
+        private readonly GalleryViewModel _galleryVm;
+
         public MainShellViewModel()
         {
+            _galleryVm = new GalleryViewModel(this);
+
             GalleryCommand = ReactiveCommand.CreateFromObservable<Unit, IRoutableViewModel>(
-                _ => Router.Navigate.Execute(new GalleryViewModel(this)));
+                _ => Router.Navigate.Execute(_galleryVm));
 
             SearchCommand = ReactiveCommand.CreateFromObservable<Unit, IRoutableViewModel>(
                 _ => Router.Navigate.Execute(new SearchViewModel(this)));
+
+            FileViewCommand = ReactiveCommand.CreateFromObservable<GalleryFile, IRoutableViewModel>(
+                file => Router.Navigate.Execute(new SingleFileViewModel(this, file)));
 
             Title = Router.CurrentViewModel.Select(vm => vm?.UrlPathSegment ?? "null");
 
@@ -42,6 +49,7 @@
 
         public ReactiveCommand<Unit, IRoutableViewModel> SearchCommand { get; }
         public ReactiveCommand<Unit, IRoutableViewModel> GalleryCommand { get; }
+        public ReactiveCommand<GalleryFile, IRoutableViewModel> FileViewCommand { get; }
 
         public ReactiveCommand<Unit, Unit> BackCommand => Router.NavigateBack;
 

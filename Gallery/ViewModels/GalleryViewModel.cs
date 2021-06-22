@@ -54,21 +54,15 @@
 
             this.WhenActivated((CompositeDisposable disposables) =>
             {
-                _sfService.Connect()
+                _sfService.SelectedFiles()
+                .ToObservableChangeSet()
                 .Transform(file => new GalleryThumbnailViewModel(file))
-                .ForEachChange(UpdateSelectionOnItemsChanged)
-                .Sort(SortExpressionComparer<GalleryThumbnailViewModel>.Ascending(vm => vm.File.FullPath))  // todo: sort in SFS (so it applies everywhere)
                 .Bind(out _items)
-                .Subscribe()
-                .DisposeWith(disposables);
+                .ActOnEveryObject(OnItemAdded, OnItemRemoved);
 
                 this.RaisePropertyChanged(nameof(Items));
             });
         }
-
-        // Need to declare parameterless constructor explicitly for the XAML designer preview to work
-        public GalleryViewModel() : this(null!, null, null)
-        { }
 
         public string? UrlPathSegment => "Gallery";
 
@@ -109,24 +103,19 @@
             _selectedItems.Clear();
         }
 
-        private void UpdateSelectionOnItemsChanged(Change<GalleryThumbnailViewModel, string> change)
+        private void OnItemAdded(GalleryThumbnailViewModel item)
         {
-            switch (change.Reason)
+            bool isSelected = _selectedItems.Lookup(item.File.FullPath).HasValue;
+            item.IsSelected = isSelected;
+            if (isSelected)
             {
-                case DynamicData.ChangeReason.Add:
-                case DynamicData.ChangeReason.Refresh:
-                case DynamicData.ChangeReason.Update:
-                    bool isSelected = _selectedItems.Lookup(change.Current.File.FullPath).HasValue;
-                    change.Current.IsSelected = isSelected;
-                    if (isSelected)
-                    {
-                        _selectedItems.AddOrUpdate(change.Current);
-                    }
-                    break;
-                case DynamicData.ChangeReason.Remove:
-                    _selectedItems.Remove(key: change.Current.File.FullPath);
-                    break;
+                _selectedItems.AddOrUpdate(item);
             }
+        }
+
+        private void OnItemRemoved(GalleryThumbnailViewModel item)
+        {
+            _selectedItems.Remove(key: item.File.FullPath);
         }
 
         private async Task AddTag(Tag? tag)

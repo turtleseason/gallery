@@ -2,10 +2,12 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.Diagnostics;
     using System.Linq;
 
     using DynamicData;
+    using DynamicData.Binding;
 
     using Gallery.Models;
 
@@ -16,8 +18,10 @@
         private IDataService _dbService;
         private IFileSystemService _fsService;
 
-        private ISourceCache<GalleryFile, string> _files;
+        private ISourceCache<GalleryFile, string> _filesCache;
         private FileCollection _params;
+
+        private ReadOnlyObservableCollection<GalleryFile> _observableCollection;
 
         public SelectedFilesService(IDataService? dbService = null, IFileSystemService? fsService = null)
         {
@@ -26,16 +30,22 @@
 
             _params = new FileCollection() { IncludeUntracked = true };
 
-            _files = new SourceCache<GalleryFile, string>(x => x.FullPath);
-            _files.AddOrUpdate(_dbService.GetFiles());
+            _filesCache = new SourceCache<GalleryFile, string>(x => x.FullPath);
+            _filesCache.AddOrUpdate(_dbService.GetFiles());
 
             _dbService.OnChange += HandleChange;
+
+            _observableCollection = new ReadOnlyObservableCollection<GalleryFile>(new ObservableCollection<GalleryFile>());
+            _filesCache.Connect()
+                .Sort(SortExpressionComparer<GalleryFile>.Ascending(file => file.FullPath),
+                    SortOptimisations.ComparesImmutableValuesOnly)
+                .Bind(out _observableCollection)
+                .Subscribe();
         }
 
-        /// Exposes the set of selected files via a DynamicData observable
-        public IObservable<IChangeSet<GalleryFile, string>> Connect()
+        public ReadOnlyObservableCollection<GalleryFile> SelectedFiles()
         {
-            return _files.Connect();
+            return _observableCollection;
         }
 
         /////// Replaces the current FileCollection with a new one
@@ -59,7 +69,7 @@
         {
             _params.Parameters = parameters;
 
-            _files.Clear();
+            _filesCache.Clear();
 
             AddOrUpdateFiles(_params.Parameters, _params.SourceFolders.ToArray());
         }
@@ -67,9 +77,9 @@
         /// Adds the given folder to the current source folder(s) [doesn't check for duplicates].
         public void AddDirectory(string path)
         {
-            if (_params.SourceFolders.Count() == 0)
+            if (_params.SourceFolders.Count == 0)
             {
-                _files.Clear();
+                _filesCache.Clear();
             }
 
             _params.SourceFolders.Add(path);
@@ -82,9 +92,9 @@
         {
             _params.SourceFolders.Remove(path);
 
-            _files.Remove(_files.Items.Where(x => x.Directory == path));
+            _filesCache.Remove(_filesCache.Items.Where(x => x.Directory == path));
 
-            if (_params.SourceFolders.Count() == 0)
+            if (_params.SourceFolders.Count == 0)
             {
                 AddOrUpdateFiles(_params.Parameters);
             }
@@ -92,7 +102,7 @@
 
         private void AddOrUpdateFiles(IList<ISearchParameter> parameters, params string[] folders)
         {
-            _files.AddOrUpdate(_dbService.GetFiles(parameters, folders));
+            _filesCache.AddOrUpdate(_dbService.GetFiles(parameters, folders));
 
             if (_params.IncludeUntracked)
             {
@@ -102,8 +112,8 @@
                     if (files != null)
                     {
                         // Skip files that are already tracked & in the collection
-                        _files.AddOrUpdate(files
-                            .Where(file => !_files.Lookup(file.FullPath).HasValue)
+                        _filesCache.AddOrUpdate(files
+                            .Where(file => !_filesCache.Lookup(file.FullPath).HasValue)
                             .Where(file => ISearchParameter.MatchesAllParameters(file, parameters)));
                     }
                 }
@@ -117,15 +127,15 @@
 
             if (change.Reason == Models.ChangeReason.Add && change.EntityType == ChangeEntity.Tag)
             {
-                _files.Edit(updater =>
+                _filesCache.Edit(updater =>
                 {
                     foreach (string file in change.AffectedFiles)
                     {
-                        var lookup = _files.Lookup(file);
+                        var lookup = _filesCache.Lookup(file);
                         if (lookup.HasValue && lookup.Value is TrackedFile trackedFile)
                         {
                             trackedFile.Tags.Add((Tag)change.Item);
-                            _files.AddOrUpdate(trackedFile);
+                            _filesCache.AddOrUpdate(trackedFile);
 
                             // If we introduce "not" search params, may need to remove file from _files
                             // if the update means it not longer matches
@@ -139,7 +149,7 @@
                 if (_params.SourceFolders.Contains(file.Directory)
                     && ISearchParameter.MatchesAllParameters(file, _params.Parameters))
                 {
-                    _files.AddOrUpdate(file);
+                    _filesCache.AddOrUpdate(file);
                 }
             }
         }

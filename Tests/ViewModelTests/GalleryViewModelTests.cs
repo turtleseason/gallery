@@ -1,6 +1,7 @@
 ﻿namespace Tests
 {
     using System;
+    using System.Collections.ObjectModel;
     using System.Diagnostics;
     using System.Linq;
     using System.Reactive.Linq;
@@ -37,7 +38,10 @@
             _files.AddOrUpdate(new TrackedFile() { FullPath = @"C:\fakepath\file_2.jpg" });
             _files.AddOrUpdate(new GalleryFile() { FullPath = @"C:\fakepath\filethree.png" });
 
-            _mockFiles.Setup(mock => mock.Connect()).Returns(_files.Connect());
+            var collection = new ReadOnlyObservableCollection<GalleryFile>(new ObservableCollection<GalleryFile>());
+            _files.Connect().Bind(out collection).Subscribe();
+
+            _mockFiles.Setup(mock => mock.SelectedFiles()).Returns(collection);
 
             _vm = new GalleryViewModel(null, dbService: _mockDb.Object, sfService: _mockFiles.Object);
             _vm.Activator.Activate();

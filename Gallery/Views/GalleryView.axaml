@@ -19,16 +19,17 @@
             <ItemsRepeater Items="{Binding Items}" Margin="10">
                 
                 <ItemsRepeater.Layout>
-                    <WrapLayout HorizontalSpacing="20" VerticalSpacing="25" />
+                    <WrapLayout HorizontalSpacing="8" VerticalSpacing="15" />
                 </ItemsRepeater.Layout>
                 
                 <ItemsRepeater.ItemTemplate>
                     <DataTemplate>
                         <!-- Temp (not sure if this should remain a Button or not) -->
-                        <Button Command="{Binding $parent[v:GalleryView].DataContext.ToggleSelectCommand}"
-                                CommandParameter="{Binding}"
+                        <Button Command="{Binding $parent[v:MainShellView].DataContext.FileViewCommand}"
+                                CommandParameter="{Binding File}"
                                 Classes.isSelected="{Binding IsSelected}"
-                                BorderThickness="2.5">
+                                BorderThickness="2.5"
+                                Padding="7">
                             
                             <Button.Styles>
                                 <Style Selector="Button.isSelected">
@@ -41,8 +42,17 @@
                                     <Setter Property="BorderBrush" Value="White"/>
                                 </Style>
                             </Button.Styles>
-                            
-                            <v:GalleryThumbnailView />
+
+                            <Grid>
+                                <CheckBox Margin="-1,-7,0,0"
+                                          Command="{Binding $parent[v:GalleryView].DataContext.ToggleSelectCommand}"
+                                          CommandParameter="{Binding}"
+                                          IsChecked="{Binding IsSelected}"
+                                          VerticalAlignment="Top"
+                                          ZIndex="100"
+                                />
+                                <v:GalleryThumbnailView Padding="5"/>
+                            </Grid>
                             
                         </Button>
                     </DataTemplate>
