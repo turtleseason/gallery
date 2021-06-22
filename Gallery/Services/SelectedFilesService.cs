@@ -93,11 +93,14 @@
             _params.SourceFolders.Remove(path);
 
             _filesCache.Remove(_filesCache.Items.Where(x => x.Directory == path));
+        }
 
-            if (_params.SourceFolders.Count == 0)
-            {
-                AddOrUpdateFiles(_params.Parameters);
-            }
+        /// Clears all source folders and shows tracked files from all folders.
+        public void ShowAllTrackedFiles()
+        {
+            _params.SourceFolders.Clear();
+
+            AddOrUpdateFiles(_params.Parameters);
         }
 
         private void AddOrUpdateFiles(IList<ISearchParameter> parameters, params string[] folders)

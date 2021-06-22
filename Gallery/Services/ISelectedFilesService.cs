@@ -17,5 +17,7 @@
         void AddDirectory(string path);
 
         void RemoveDirectory(string path);
+
+        void ShowAllTrackedFiles();
     }
 }

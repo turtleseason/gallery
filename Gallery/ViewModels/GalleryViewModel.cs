@@ -52,16 +52,14 @@
             ToggleSelectCommand = ReactiveCommand.Create<GalleryThumbnailViewModel>(ToggleSelect);
             DeselectAllCommand = ReactiveCommand.Create(DeselectAll);
 
-            this.WhenActivated((CompositeDisposable disposables) =>
-            {
-                _sfService.SelectedFiles()
-                .ToObservableChangeSet()
-                .Transform(file => new GalleryThumbnailViewModel(file))
-                .Bind(out _items)
-                .ActOnEveryObject(OnItemAdded, OnItemRemoved);
-
-                this.RaisePropertyChanged(nameof(Items));
-            });
+            // This subscription isn't disposed on deactivation, since repopulating can be a bit slow for a large collection;
+            // this operates under the assumption that the app will reuse a single GalleryViewModel for its whole lifetime,
+            // so cleaning up resources properly isn't too big of a concern
+            _sfService.SelectedFiles()
+            .ToObservableChangeSet()
+            .Transform(file => new GalleryThumbnailViewModel(file))
+            .Bind(out _items)
+            .ActOnEveryObject(OnItemAdded, OnItemRemoved);
         }
 
         public string? UrlPathSegment => "Gallery";

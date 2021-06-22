@@ -5,34 +5,45 @@
              xmlns:vm="using:Gallery.ViewModels"
              mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="450"
              x:Class="Gallery.Views.FolderListView">
-    <TreeView Items="{Binding Items}"
-              SelectedItems="{Binding SelectedItems}"
-              SelectionMode="Multiple"
-              ClipToBounds="True">
-        <TreeView.Styles>
-            <Style Selector="TreeViewItem">
-                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
-            </Style>
-        </TreeView.Styles>
-        <TreeView.ItemTemplate>
-            <TreeDataTemplate ItemsSource="{Binding Children}">
-                <TextBlock Text="{Binding Name}">
-                    <TextBlock.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="Is tracked!" IsVisible="{Binding IsTracked^}"/>
-                            <MenuItem Header="Track folder"
-                                      Command="{Binding $parent[TreeView].DataContext.TrackFolderCommand}"
-                                      CommandParameter="{Binding}"
-                                      IsVisible="{Binding !IsTracked^}"/>
-                            <MenuItem Header="Track all selected folders"
-                                      Command="{Binding $parent[TreeView].DataContext.TrackSelectedFoldersCommand}"/>
-                        </ContextMenu>
-                    </TextBlock.ContextMenu>
-                </TextBlock>
-            </TreeDataTemplate>
-        </TreeView.ItemTemplate>
-    </TreeView>
+    <Grid RowDefinitions="*, Auto">
+        
+        <TreeView Items="{Binding Items}"
+                  SelectedItems="{Binding SelectedItems}"
+                  SelectionMode="Multiple"
+                  Grid.Row="0">
+            <TreeView.Styles>
+                <Style Selector="TreeViewItem">
+                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                </Style>
+            </TreeView.Styles>
+            <TreeView.ItemTemplate>
+                <TreeDataTemplate ItemsSource="{Binding Children}">
+                    <TextBlock Text="{Binding Name}">
+                        <TextBlock.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Is tracked!" IsVisible="{Binding IsTracked^}"/>
+                                <MenuItem Header="Track folder"
+                                          Command="{Binding $parent[TreeView].DataContext.TrackFolderCommand}"
+                                          CommandParameter="{Binding}"
+                                          IsVisible="{Binding !IsTracked^}"/>
+                                <MenuItem Header="Track all selected folders"
+                                          Command="{Binding $parent[TreeView].DataContext.TrackSelectedFoldersCommand}"/>
+                            </ContextMenu>
+                        </TextBlock.ContextMenu>
+                    </TextBlock>
+                </TreeDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
 
+        <Button Grid.Row="1"
+                Command="{Binding ShowAllTrackedCommand}"
+                Content="Show all tracked"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+        />
+        
+    </Grid>
+    
     <Design.DataContext>
         <vm:FolderListViewModel/>
     </Design.DataContext>

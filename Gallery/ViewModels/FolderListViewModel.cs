@@ -65,6 +65,8 @@
                     Observable.Return("Tracking folders"),
                     TrackFoldersProgress));
 
+            ShowAllTrackedCommand = ReactiveCommand.Create(ShowAllTracked);
+
             selectedItemsObservable.Subscribe(changes => UpdateSelectedFolders(changes));
 
             IDisposable disposable = trackedFoldersObservable.ObserveOn(RxApp.MainThreadScheduler)
@@ -86,6 +88,8 @@
         public ObservableCollection<FolderListItemViewModel> Items { get; }
         public ObservableCollection<FolderListItemViewModel> SelectedItems { get; }
 
+        public ReactiveCommand<Unit, Unit> ShowAllTrackedCommand { get; }
+
         public ReactiveCommand<FolderListItemViewModel, Unit> TrackFolderCommand { get; }
         public ReactiveCommand<Unit, Unit> TrackSelectedFoldersCommand { get; }
 
@@ -104,6 +108,13 @@
                     _sfService.RemoveDirectory(change.Key);
                 }
             }
+        }
+
+        private void ShowAllTracked()
+        {
+            SelectedItems.Clear();
+
+            _sfService.ShowAllTrackedFiles();
         }
 
         private void LoadFirstLevelChildren()

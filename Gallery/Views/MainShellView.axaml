@@ -58,7 +58,8 @@
             </Label>
         </DockPanel>
         
-        <ContentControl Grid.Row="1" Grid.Column="0" Content="{Binding FolderList}"/>
+        <ContentControl Grid.Row="1" Grid.Column="0" Grid.RowSpan="2"
+                        Content="{Binding FolderList}"/>
         
         <rxui:RoutedViewHost Grid.Row="1" Grid.Column="2" 
                              Router="{Binding Router}"
@@ -69,7 +70,7 @@
                       ResizeDirection="Columns"
                       ShowsPreview="True"/>
 
-        <ItemsControl Grid.Row="2" Grid.ColumnSpan="3" Items="{Binding ExecutingCommands}">
+        <ItemsControl Grid.Row="2" Grid.Column="2" Items="{Binding ExecutingCommands}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <v:CommandStatusView Background="#171717" DataContext="{Binding}"/>
