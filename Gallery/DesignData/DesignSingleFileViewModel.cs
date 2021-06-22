@@ -26,6 +26,10 @@
 
         Mom (Janet Benson) (calling from downstairs:) Barry! Breakfast is ready!";
 
+        public static string EditedDescription => Description;
+
+        public static bool IsEditing => true;
+
         public static ISet<Tag>? Tags { get; }
 
         public static Bitmap? Image => null;

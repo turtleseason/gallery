@@ -25,5 +25,7 @@
 
         Task AddTag(Tag tag, params string[] filePaths);
         void CreateTagGroup(TagGroup group);
+
+        void UpdateDescription(string description, string filePath);
     }
 }

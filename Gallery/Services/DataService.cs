@@ -143,6 +143,19 @@
             _database.AddTagGroup(group);
         }
 
+        // Note: the TrackedFile in the update notification doesn't include tags
+        // (for efficiency/simplicity, since tag updates have a separate change entity type)
+        public void UpdateDescription(string description, string filePath)
+        {
+            TrackedFile? file = _database.UpdateDescription(description, filePath);
+
+            if (file != null)
+            {
+                var change = new DataChange(file, Models.ChangeReason.Update, ChangeEntity.File);
+                OnChange?.Invoke(this, new DataChangedEventArgs(change));
+            }
+        }
+
         private async Task TrackFile(string path, int folderId)
         {
             var file = new TrackedFile() { FullPath = path };

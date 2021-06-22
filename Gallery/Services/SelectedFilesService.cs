@@ -155,6 +155,17 @@
                     _filesCache.AddOrUpdate(file);
                 }
             }
+            else if (change.Reason == Models.ChangeReason.Update && change.EntityType == ChangeEntity.File)
+            {
+                TrackedFile file = (TrackedFile)change.Item;
+                var lookup = _filesCache.Lookup(file.FullPath);
+                if (lookup.HasValue)
+                {
+                    TrackedFile trackedFile = (TrackedFile)lookup.Value;
+                    trackedFile.Description = file.Description;
+                    _filesCache.AddOrUpdate(trackedFile);
+                }
+            }
         }
     }
 }

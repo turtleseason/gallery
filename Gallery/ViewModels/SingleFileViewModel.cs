@@ -28,6 +28,9 @@
         private readonly GalleryFile _file;
 
         private Bitmap? _image;
+        private string _description = string.Empty;
+        private string _editedDescription = string.Empty;
+        private bool _isEditing = false;
 
         public SingleFileViewModel(IScreen screen, GalleryFile file, ISelectedFilesService? sfService = null, IDataService? dataService = null)
         {
@@ -37,6 +40,9 @@
 
             sfService ??= Locator.Current.GetService<ISelectedFilesService>();
             _selectedFiles = sfService.SelectedFiles();
+
+            Description = (_file as TrackedFile)?.Description ?? string.Empty;
+            EditedDescription = Description;
 
             if (file is TrackedFile trackedFile)
             {
@@ -66,11 +72,38 @@
         public ReactiveCommand<Unit, Unit> PreviousFileCommand { get; }
         public ReactiveCommand<Unit, Unit> NextFileCommand { get; }
 
-        public string Description => (_file as TrackedFile)?.Description ?? string.Empty;
+        public bool IsTracked => _file is TrackedFile;
+
+        public string Description { get => _description; set => this.RaiseAndSetIfChanged(ref _description, value); }
 
         public ObservableCollection<Tag>? Tags { get; }
 
         public Bitmap? Image { get => _image; set => this.RaiseAndSetIfChanged(ref _image, value); }
+
+        public bool IsEditing { get => _isEditing; set => this.RaiseAndSetIfChanged(ref _isEditing, value); }
+
+        public string EditedDescription { get => _editedDescription; set => this.RaiseAndSetIfChanged(ref _editedDescription, value); }
+
+        public void ToggleEdit()
+        {
+            IsEditing = !IsEditing;
+        }
+
+        public void ResetTextBox()
+        {
+            EditedDescription = Description;
+        }
+
+        public void SaveDescription()
+        {
+            if (_file is TrackedFile)
+            {
+                _dataService.UpdateDescription(EditedDescription, _file.FullPath);
+                Description = EditedDescription;
+            }
+
+            IsEditing = false;
+        }
 
         public IObservable<Unit> NavigateToFile(int offset)
         {

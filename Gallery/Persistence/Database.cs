@@ -106,6 +106,22 @@
             }
         }
 
+        public TrackedFile? UpdateDescription(string description, string filePath)
+        {
+            string sql = @$"UPDATE File SET description = @Description WHERE path = @FilePath;
+                           SELECT path as {nameof(TrackedFile.FullPath)},
+                                  thumbnail as {nameof(TrackedFile.Thumbnail)},
+                                  description as {nameof(TrackedFile.Description)}
+                             FROM File
+                            WHERE path = @FilePath;";
+
+            using (var conn = new SqliteConnection(ConnectionString))
+            {
+                var result = conn.Query<TrackedFile>(sql, new { Description = description, FilePath = filePath });
+                return result.SingleOrDefault();
+            }
+        }
+
         public IEnumerable<string> GetTrackedFolders()
         {
             using (var conn = new SqliteConnection(ConnectionString))
@@ -170,6 +186,7 @@
             string querySql = @$"
                 SELECT File.path as {nameof(TrackedFile.FullPath)},
                        File.thumbnail as {nameof(TrackedFile.Thumbnail)},
+                       File.description as {nameof(TrackedFile.Description)},
                        Tag.name as {nameof(Tag.Name)},
                        FileTag.tag_value as {nameof(Tag.Value)},
                        TagGroup.name as {nameof(TagGroup.Name)},
@@ -234,6 +251,7 @@
                     path VARCHAR UNIQUE NOT NULL,
                     folder_id INTEGER NOT NULL,
                     thumbnail VARCHAR,
+                    description VARCHAR,
                     FOREIGN KEY (folder_id) REFERENCES Folder(folder_id) ON DELETE CASCADE
                 );
 

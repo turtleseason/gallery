@@ -8,7 +8,8 @@
              x:Class="Gallery.Views.SingleFileView">
     <Grid RowDefinitions="Auto, 2*, Auto, *">
         <Button Grid.Row="0"
-                Command="{Binding $parent[v:MainShellView].DataContext.GalleryCommand}">
+                Command="{Binding $parent[v:MainShellView].DataContext.GalleryCommand}"
+                Margin="0,0,0,2">
             Back to gallery
         </Button>
         
@@ -39,16 +40,39 @@
 
         <ScrollViewer Grid.Row="3">
             <Grid ColumnDefinitions="2*, Auto, *" Margin="0,0,18,0" MinHeight="50">
-                <StackPanel Grid.Column="0" Margin="10">
+                <StackPanel Grid.Column="0" IsVisible="{Binding IsTracked}" Margin="10">
                     <DockPanel Margin="0,0,0,10">
                         <TextBlock Classes="h1">Description</TextBlock>
-                        <Button 
+                        <Button Command="{Binding ToggleEdit}"
                                 HorizontalAlignment="Right"
                                 Background="Transparent">
                             <PathIcon Data="{StaticResource edit_regular}" HorizontalAlignment="Right"/>
                         </Button>
                     </DockPanel>
-                    <TextBlock TextWrapping="Wrap" Text="{Binding Description}"/>
+                    
+                    <Carousel Classes.editing="{Binding IsEditing}">
+                        
+                        <Carousel.Styles>
+                            <Style Selector="Carousel.editing">
+                                <Setter Property="SelectedIndex" Value="1"/>
+                            </Style>
+                        </Carousel.Styles>
+                        
+                        <TextBlock Text="{Binding Description}" TextWrapping="Wrap"/>
+                        
+                        <StackPanel Spacing="8">
+                            <TextBox Text="{Binding EditedDescription}"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"/>
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="8"
+                                        HorizontalAlignment="Right">
+                                <Button Content="Reset" Command="{Binding ResetTextBox}"/>
+                                <Button Content="Save" Command="{Binding SaveDescription}"/>
+                            </StackPanel>
+                        </StackPanel>
+                        
+                    </Carousel>
                 </StackPanel>
 
                 <GridSplitter Grid.Column="1" ResizeDirection="Columns"/>
