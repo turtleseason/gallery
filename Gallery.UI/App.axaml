@@ -1,0 +1,26 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Gallery.UI"
+             xmlns:m="using:Gallery.Entities"
+             xmlns:c="using:Gallery.UI.Converters"
+             x:Class="Gallery.UI.App">
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+
+        <DataTemplate DataType="m:Tag">
+            <Border ToolTip.Tip="{Binding FullString}"
+                    Background="{Binding Group.Color, TargetNullValue={x:Static Brushes.DarkMagenta}}"
+                    CornerRadius="5"
+                    Padding="5">
+                <TextBlock Text="{Binding FullString}"
+                           TextTrimming="CharacterEllipsis"
+                           Foreground="{Binding Group.Color, Converter={x:Static c:Converter.ContrastText}}"/>
+            </Border>
+        </DataTemplate>
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <FluentTheme Mode="Dark"/>
+        <StyleInclude Source="/Icons.axaml"/>
+    </Application.Styles>
+</Application>

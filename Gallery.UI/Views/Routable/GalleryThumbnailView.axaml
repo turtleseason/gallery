@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:v="clr-namespace:Gallery.UI.Views"
+             xmlns:c="clr-namespace:Gallery.UI.Converters"
+             mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="250"
+             x:Class="Gallery.UI.Views.GalleryThumbnailView">
+    <StackPanel Width="200">
+
+        <StackPanel.ContextMenu>
+            <ContextMenu IsVisible="{Binding File, Converter={x:Static c:Converter.IsTracked}}">
+                <MenuItem Header="Add tag..."
+                          Command="{Binding $parent[v:GalleryView].DataContext.AddTagCommand}"/>
+            </ContextMenu>
+        </StackPanel.ContextMenu>
+
+        <Panel Width="200" Height="200"
+               Classes.has-bg="{Binding Thumbnail, Converter={x:Static ObjectConverters.IsNull}}">
+            <Panel.Styles>
+                <Style Selector="Panel.has-bg">
+                    <Setter Property="Background" Value="Gray"/>
+                </Style>
+            </Panel.Styles>
+            <Image Source="{Binding Thumbnail}" MaxHeight="200"/>
+            <PathIcon Data="{StaticResource document_regular}"
+                      IsVisible="{Binding Thumbnail, Converter={x:Static ObjectConverters.IsNull}}"
+                      Width="50" Height="50"/>
+        </Panel>
+
+        <TextBlock Text="{Binding File.Name}"
+                   ToolTip.Tip="{Binding File.FullPath}"
+                   TextWrapping="Wrap"
+                   Width="200"
+                   Margin="0,8,0,5"/>
+
+        <ItemsControl Items="{Binding Tags}">
+            <ItemsControl.Styles>
+                <Style Selector="Border">
+                    <Setter Property="Margin" Value="0,5,5,0"/>
+                </Style>
+            </ItemsControl.Styles>
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+
+    </StackPanel>
+</UserControl>

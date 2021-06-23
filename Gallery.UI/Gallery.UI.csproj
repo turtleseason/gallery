@@ -1,27 +1,37 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>library</OutputType>
+    <OutputType>WinExe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
   <ItemGroup>
     <AdditionalFiles Include="..\stylecop.json" Link="stylecop.json" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="0.10.6" />
     <PackageReference Include="Avalonia.Desktop" Version="0.10.6" />
     <PackageReference Include="Avalonia.Diagnostics" Version="0.10.6" />
     <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.6" />
-    <PackageReference Include="Dapper" Version="2.0.90" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.7" />
+    <PackageReference Include="Pharmacist.MSBuild" Version="2.0.8" PrivateAssets="all" />
+    <PackageReference Include="Pharmacist.Common" Version="2.0.8" />
     <PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.354">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
   </ItemGroup>
-
+  <ItemGroup>
+    <ProjectReference Include="..\Gallery\Gallery.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Views\Dialogs\AddTagsView.axaml.cs">
+      <DependentUpon>AddTagsView.axaml</DependentUpon>
+    </Compile>
+    <Compile Update="Views\Routable\GallerySelectionView.axaml.cs">
+      <DependentUpon>GallerySelectionView.axaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
 </Project>

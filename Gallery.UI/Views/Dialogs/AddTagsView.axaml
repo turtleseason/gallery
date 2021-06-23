@@ -1,0 +1,102 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:m="using:Gallery.Entities"
+             xmlns:vm="using:Gallery.UI.ViewModels"
+             xmlns:c="using:Gallery.UI.Converters"
+             mc:Ignorable="d"
+             x:Class="Gallery.UI.Views.AddTagsView">
+    <StackPanel Margin="15" HorizontalAlignment="Stretch">
+        <StackPanel.Styles>
+            <Style Selector="Label">
+                <Setter Property="Margin" Value="0,0,10,0"/>
+            </Style>
+            <Style Selector="Label.small">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontStyle" Value="Italic"/>
+            </Style>
+            <Style Selector="TextBox, ComboBox, AutoCompleteBox">
+                <Setter Property="Margin" Value="0,0,15,0"/>
+                <Setter Property="VerticalAlignment" Value="Top"/>
+                <Setter Property="Width" Value="120"/>
+            </Style>
+        </StackPanel.Styles>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+            <Label>Tag name:</Label>
+            <AutoCompleteBox Name="TagName"
+                             Text="{Binding Name}"
+                             Items="{Binding Tags}"
+                             ValueMemberBinding="{Binding Name}"
+                             FilterMode="Contains"/>
+            
+            <StackPanel>
+                <Label>Value:</Label>
+                <Label Classes="small">(optional)</Label>
+            </StackPanel>
+            <TextBox Text="{Binding Value}"/>
+
+            <Label>Tag group:</Label>
+            <ComboBox Items="{Binding AvailableGroups}"
+                        SelectedItem="{Binding SelectedGroup}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <Label Background="{Binding Color}"
+                               Foreground="{Binding $self.Background,
+                                            Converter={x:Static c:Converter.ContrastText}}"
+                               Content="{Binding Name}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding SelectedGroupMismatch}"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,0,0,15">
+            <PathIcon VerticalAlignment="Bottom" Data="{StaticResource warning_regular}" Margin="0,0,5,0"/>
+            <TextBlock Text="Tag group will be updated for all &quot;"/>
+            <TextBlock Text="{Binding Name}"/>
+            <TextBlock Text="&quot; tags."/>
+        </StackPanel>
+
+        <StackPanel Margin="0,0,0,15">
+            <Button HorizontalAlignment="Right"
+                    IsVisible="{Binding !IsAddingGroup}"
+                    Command="{Binding ToggleAddGroupControls}">
+                New group...
+            </Button>
+            
+            <StackPanel IsVisible="{Binding IsAddingGroup}"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right">
+                <Label VerticalAlignment="Center">Name:</Label>
+                <TextBox Text="{Binding GroupName}"/>
+                <Label VerticalAlignment="Center">Color:</Label>
+                <TextBox Text="{Binding Color}" MaxLength="7"/>
+                <Border CornerRadius="3" Width="30" Height="30"
+                        Background="{Binding LastValidColor^}"
+                        BorderBrush="Gray"
+                        BorderThickness="1.5"/>
+                <Button Command="{Binding AddGroupCommand}" Margin="20,0,10,0">Add</Button>
+                <Button Command="{Binding ToggleAddGroupControls}">X</Button>
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <StackPanel.Styles>
+                <Style Selector="Button">
+                    <Setter Property="Margin" Value="10,0,0,0"/>
+                </Style>
+            </StackPanel.Styles>
+            <Button Command="{Binding CloseCommand}">Cancel</Button>
+            <Button Command="{Binding AddTagsCommand}">OK</Button>
+        </StackPanel>
+
+    </StackPanel>
+
+    <Design.DataContext>
+        <vm:AddTagsViewModel/>
+    </Design.DataContext>
+</UserControl>

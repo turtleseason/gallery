@@ -45,5 +45,7 @@
         <!-- Using three slashes for now to differentiate between "documentation" comments and notes/todos; might change later -->
         <Rule Id="SA1626"  Action="None" />             <!-- Single-line comments should not use documentation style slashes -->
         <Rule Id="SA1633"  Action="None" />             <!-- File should have header -->
+        <!-- Disabled in order to keep single-implementation interfaces in the same class as the implementing class (it's a tiny bit more convenient, and I'm not seeing any particular benefit from separating them for the purposes of this project) -->
+        <Rule Id="SA1649"  Action="None" />             <!-- File name should match first type name -->
     </Rules>
 </RuleSet>

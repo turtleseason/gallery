@@ -1,15 +1,9 @@
 ﻿namespace Tests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-
     using DynamicData;
 
-    using Gallery.Models;
-    using Gallery.Services;
+    using Gallery.Data;
+    using Gallery.Entities;
 
     using Moq;
 

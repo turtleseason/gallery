@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="680"
+             x:Class="Gallery.UI.Views.GallerySelectionView">
+    <StackPanel Orientation="Horizontal" Spacing="10" Margin="15,10">
+
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Classes="h2" Text="{Binding SelectionCount^}" VerticalAlignment="Center"/>
+            <TextBlock Classes="h2" Text=" file(s) selected" VerticalAlignment="Center" Margin="0,0,10,0"/>
+        </StackPanel>
+        
+        <Button Command="{Binding AddTagCommand}" Content="Add tag..."/>
+        
+        <Button Command="{Binding DeselectAllCommand}" Content="Deselect all"/>
+        
+    </StackPanel>
+</UserControl>
