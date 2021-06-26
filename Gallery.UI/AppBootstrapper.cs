@@ -1,13 +1,14 @@
 ﻿namespace Gallery.UI
 {
+    using System.Diagnostics;
     using System.Reflection;
 
     using Gallery.Data;
-    using Gallery.UI.ViewModels;
-    using Gallery.UI.Views;
     using Gallery.Util;
 
     using ReactiveUI;
+
+    using Serilog;
 
     using Splat;
 
@@ -31,9 +32,22 @@
         public static void RegisterViews()
         {
             Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetExecutingAssembly());
+        }
 
-            ////Locator.CurrentMutable.Register(() => new SearchView(), typeof(IViewFor<SearchViewModel>));
-            ////Locator.CurrentMutable.Register(() => new GalleryView(), typeof(IViewFor<GalleryViewModel>));
+        public static void LogToFile(bool includeTraceOutput)
+        {
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.File("log.txt",
+                    rollingInterval: RollingInterval.Day,
+                    fileSizeLimitBytes: 10000000,
+                    rollOnFileSizeLimit: true)
+                .CreateLogger();
+
+            if (includeTraceOutput)
+            {
+                Trace.Listeners.Add(new SerilogTraceListener.SerilogTraceListener());
+            }
         }
     }
 }

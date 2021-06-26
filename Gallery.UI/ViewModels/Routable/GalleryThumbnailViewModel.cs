@@ -46,7 +46,7 @@
             _file = file;
 
             Observable.FromAsync(LoadThumbnail, RxApp.MainThreadScheduler)
-                .Subscribe(bitmap => Thumbnail = bitmap);
+                .Subscribe(bitmap => Thumbnail = bitmap, ex => RxApp.DefaultExceptionHandler.OnNext(ex));
         }
 
         public GalleryFile File => _file;

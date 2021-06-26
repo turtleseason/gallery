@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:v="using:Gallery.UI.Views"
+             xmlns:vm="using:Gallery.UI.ViewModels"
+             mc:Ignorable="d" Width="640"
+             x:Class="Gallery.UI.Views.ErrorView">
+    <StackPanel Spacing="10" Margin="10">
+        <Label>An unhandled exception was thrown:</Label>
+        <TextBox Text="{Binding Exception}"
+                 IsReadOnly="True"
+                 TextWrapping="Wrap"
+                 MaxHeight="200" />
+        <Button Content="Continue"
+                Command="{Binding CloseCommand}"
+                HorizontalAlignment="Right"/>
+    </StackPanel>
+</UserControl>

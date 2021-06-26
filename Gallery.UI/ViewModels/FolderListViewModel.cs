@@ -20,6 +20,8 @@
 
     using ReactiveUI;
 
+    using Serilog;
+
     using Splat;
 
     public class FolderListViewModel : ViewModelBase
@@ -129,7 +131,7 @@
 
         private IObservable<Unit> TrackFolder(FolderListItemViewModel vm)
         {
-            Debug.WriteLine($"Tracking {vm.Name}");
+            Log.Information("Tracking {Folder}", vm.Name);
 
             if (!_trackedFolders.Contains(vm.FullPath))
             {
@@ -137,7 +139,7 @@
             }
             else
             {
-                Debug.WriteLine("  Already tracked - skipping");
+                Log.Information("  Skipping {Folder} - already tracked", vm.Name);
                 return Observable.Return(Unit.Default);
             }
         }

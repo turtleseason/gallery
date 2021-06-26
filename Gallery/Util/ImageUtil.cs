@@ -42,7 +42,7 @@
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine(e.GetType() + " " + e.Message);
+                    Trace.TraceError($"Unexpected exception in LoadBitmap:\n{e}");
                     return null;
                 }
             });
@@ -72,7 +72,7 @@
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine(e.GetType() + " " + e.Message);
+                    Trace.TraceError($"Unexpected exception in LoadThumbnail:\n{e}");
                     return null;
                 }
             });
@@ -93,12 +93,12 @@
         // (And/or leverage System.Drawing.Imaging if it supports formats Avalonia.Media.Imaging doesn't?)
         private static ISet<string> GetKnownExtensions()
         {
-            var set = ImageCodecInfo.GetImageDecoders()
+            var extensions = ImageCodecInfo.GetImageDecoders()
                 .SelectMany(codec => codec.FilenameExtension?.Split(';') ?? Array.Empty<string>())
                 .Select(x => x.ToLower().Trim('*'))
                 .ToHashSet();
-            Debug.WriteLine(string.Join(',', set));
-            return set;
+            Trace.TraceInformation($"Known image file extensions: {string.Join(',', extensions)}");
+            return extensions;
         }
     }
 }
