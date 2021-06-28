@@ -29,7 +29,7 @@ namespace Tests
 
     public class DataServiceTests
     {
-        private readonly string _connectionString = ConfigurationManager.ConnectionStrings["Default"].ConnectionString;
+        private string _connectionString;
 
         private DataService _database;
         private SqliteConnection _conn;
@@ -61,6 +61,8 @@ namespace Tests
             string configPath = Assembly.GetExecutingAssembly().Location + ".config";
             string configOutputPath = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None).FilePath;
             File.Copy(configPath, configOutputPath, true);
+
+            _connectionString = ConfigurationManager.ConnectionStrings["Default"].ConnectionString;
         }
 
         [SetUp]
