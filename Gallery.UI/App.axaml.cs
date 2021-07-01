@@ -48,12 +48,16 @@ namespace Gallery.UI
         {
             Log.Error(ex, "Unhandled exception:");
 
+            #if !DEBUG
+
             // (Show notification dialog synchronously to block program execution until user closes the dialog)
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 var dialog = new DialogWindow() { DataContext = new ErrorViewModel(ex) };
                 dialog.ShowDialogSync(desktop.MainWindow);
             }
+
+            #endif
 
             throw ex;
         }

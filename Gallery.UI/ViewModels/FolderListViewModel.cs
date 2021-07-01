@@ -101,17 +101,16 @@
 
         private void UpdateSelectedFolders(IChangeSet<FolderListItemViewModel, string> changes)
         {
-            foreach (var change in changes)
-            {
-                if (change.Reason == ChangeReason.Add)
-                {
-                    _sfService.AddDirectory(change.Key);
-                }
-                else if (change.Reason == ChangeReason.Remove)
-                {
-                    _sfService.RemoveDirectory(change.Key);
-                }
-            }
+            string[] removedPaths = changes.Where(change => change.Reason == ChangeReason.Remove)
+                .Select(change => change.Key)
+                .ToArray();
+
+            string[] addedPaths = changes.Where(change => change.Reason == ChangeReason.Add)
+                .Select(change => change.Key)
+                .ToArray();
+
+            _sfService.RemoveDirectories(removedPaths);
+            _sfService.AddDirectories(addedPaths);
         }
 
         private void ShowAllTracked()

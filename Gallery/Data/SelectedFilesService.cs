@@ -23,9 +23,9 @@
 
         void SetSearchParameters(IList<ISearchParameter> parameters);
 
-        void AddDirectory(string path);
+        void AddDirectories(params string[] paths);
 
-        void RemoveDirectory(string path);
+        void RemoveDirectories(params string[] paths);
 
         void ShowAllTrackedFiles();
     }
@@ -91,25 +91,35 @@
             AddOrUpdateFiles(_params.Parameters, _params.SourceFolders.ToArray());
         }
 
-        /// Adds the given folder to the current source folder(s) [doesn't check for duplicates].
-        public void AddDirectory(string path)
+        /// Adds the given folders to the current source folders [doesn't check for duplicates].
+        public void AddDirectories(params string[] paths)
         {
+            if (paths.Length == 0)
+            {
+                return;
+            }
+
             if (_params.SourceFolders.Count == 0)
             {
                 _filesCache.Clear();
             }
 
-            _params.SourceFolders.Add(path);
+            _params.SourceFolders.AddRange(paths);
 
-            AddOrUpdateFiles(_params.Parameters, path);
+            AddOrUpdateFiles(_params.Parameters, paths);
         }
 
-        /// Removes the given folder from the list of source folders
-        public void RemoveDirectory(string path)
+        /// Removes the given folders from the list of source folders
+        public void RemoveDirectories(params string[] paths)
         {
-            _params.SourceFolders.Remove(path);
+            if (paths.Length == 0)
+            {
+                return;
+            }
 
-            _filesCache.Remove(_filesCache.Items.Where(x => x.Directory == path));
+            _params.SourceFolders.RemoveMany(paths);
+
+            _filesCache.Remove(_filesCache.Items.Where(x => paths.Contains(x.Directory)));
         }
 
         /// Clears all source folders and shows tracked files from all folders.
