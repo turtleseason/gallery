@@ -7,6 +7,7 @@
     using System.Linq;
     using System.Reactive;
     using System.Reactive.Linq;
+    using System.Reactive.Subjects;
     using System.Threading.Tasks;
 
     using DynamicData;
@@ -23,10 +24,13 @@
 
     public class GalleryViewModel : ViewModelBase, IRoutableViewModel
     {
+        private static readonly int _maxParallelThumbnailLoads = 10;
+
         private readonly ISelectedFilesService _sfService;
         private readonly IDataService _dbService;
 
         private ISourceCache<GalleryThumbnailViewModel, string> _selectedItems;
+        private Subject<GalleryThumbnailViewModel> _thumbnailsToLoad;
 
         private ReadOnlyObservableCollection<GalleryThumbnailViewModel>? _items;
 
@@ -50,6 +54,18 @@
 
             ToggleSelectCommand = ReactiveCommand.Create<GalleryThumbnailViewModel>(ToggleSelect);
             DeselectAllCommand = ReactiveCommand.Create(DeselectAll);
+
+            _thumbnailsToLoad = new Subject<GalleryThumbnailViewModel>();
+            _thumbnailsToLoad.Select(vm =>
+                Observable.FromAsync(async () =>
+                    {
+                        if (_items!.Contains(vm))
+                        {
+                            vm.Thumbnail = await vm.LoadThumbnail();
+                        }
+                    }, RxApp.MainThreadScheduler))
+                .Merge(_maxParallelThumbnailLoads)
+                .Subscribe();
 
             // This subscription isn't disposed on deactivation, since repopulating can be a bit slow for a large collection;
             // this operates under the assumption that the app will reuse a single GalleryViewModel for its whole lifetime,
@@ -108,6 +124,8 @@
             {
                 _selectedItems.AddOrUpdate(item);
             }
+
+            _thumbnailsToLoad.OnNext(item);
         }
 
         private void OnItemRemoved(GalleryThumbnailViewModel item)

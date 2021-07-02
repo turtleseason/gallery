@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
-    using System.Reactive.Linq;
     using System.Threading.Tasks;
 
     using Avalonia;
@@ -44,9 +43,6 @@
         public GalleryThumbnailViewModel(GalleryFile file)
         {
             _file = file;
-
-            Observable.FromAsync(LoadThumbnail, RxApp.MainThreadScheduler)
-                .Subscribe(bitmap => Thumbnail = bitmap, ex => RxApp.DefaultExceptionHandler.OnNext(ex));
         }
 
         public GalleryFile File => _file;
