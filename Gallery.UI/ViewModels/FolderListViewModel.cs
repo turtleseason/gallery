@@ -47,16 +47,24 @@
             var selectedItemsObservable = SelectedItems.ToObservableChangeSet(x => x.FullPath);
             var trackedFoldersObservable = _dbService.TrackedFolders();
 
-            // CanExecute if SelectedItems contains at least one item that isn't already tracked
+            // TrackFolder & TrackSelectedFolders commands can each execute
+            // if SelectedItems contains at least one item that isn't already tracked
+            // and if the other command isn't currently executing.
             var canExecute = selectedItemsObservable.Cast(x => x.FullPath)
                 .Except(trackedFoldersObservable)
                 .Count()
                 .Select(x => x > 0);
 
-            TrackFoldersProgress = new BehaviorSubject<float?>(null);
+            Subject<bool> trackAllIsExecuting = new Subject<bool>();
 
-            TrackFolderCommand = ReactiveCommand.CreateFromObservable<FolderListItemViewModel, Unit>(TrackFolder, canExecute);
-            TrackSelectedFoldersCommand = ReactiveCommand.CreateFromObservable(TrackSelectedFolders, canExecute);
+            TrackFolderCommand = ReactiveCommand.CreateFromObservable<FolderListItemViewModel, Unit>(TrackFolder,
+                canExecute.CombineLatest(trackAllIsExecuting, (canExecute, isExecuting) => canExecute && !isExecuting));
+            TrackSelectedFoldersCommand = ReactiveCommand.CreateFromObservable(TrackSelectedFolders,
+                canExecute.CombineLatest(TrackFolderCommand.IsExecuting, (canExecute, isExecuting) => canExecute && !isExecuting));
+
+            TrackSelectedFoldersCommand.IsExecuting.Subscribe(trackAllIsExecuting);
+
+            TrackFoldersProgress = new BehaviorSubject<float?>(null);
 
             TrackFolderCommand.IsExecuting.Where(x => x)
                 .Subscribe(_ => Interactions.ReportCommandProgress(
