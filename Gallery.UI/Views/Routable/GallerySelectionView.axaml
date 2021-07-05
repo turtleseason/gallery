@@ -2,18 +2,36 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:c="using:Gallery.UI.Converters"
              mc:Ignorable="d" d:DesignWidth="680"
              x:Class="Gallery.UI.Views.GallerySelectionView">
-    <StackPanel Orientation="Horizontal" Spacing="10" Margin="15,10">
+    <Carousel SelectedIndex="{Binding SelectMode, Converter={x:Static c:Converter.BoolToInt}}"
+              Margin="15,5">
+        
+        <Button Command="{Binding ToggleSelectModeCommand}"
+                Content="Select..."
+                HorizontalAlignment="Right"/>
 
-        <StackPanel Orientation="Horizontal">
-            <TextBlock Classes="h2" Text="{Binding SelectionCount^}" VerticalAlignment="Center"/>
-            <TextBlock Classes="h2" Text=" file(s) selected" VerticalAlignment="Center" Margin="0,0,10,0"/>
-        </StackPanel>
+        <DockPanel>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Classes="h2" Text="{Binding SelectionCount^}" VerticalAlignment="Center"/>
+                    <TextBlock Classes="h2" Text=" file(s) selected" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                </StackPanel>
+
+                <Button Command="{Binding AddTagCommand}" Content="Add tag..." Margin="0,0,10,0"/>
         
-        <Button Command="{Binding AddTagCommand}" Content="Add tag..."/>
+                <Button Command="{Binding SelectAllCommand}" Content="Select all"/>
         
-        <Button Command="{Binding DeselectAllCommand}" Content="Deselect all"/>
+                <Button Command="{Binding DeselectAllCommand}" Content="Deselect all"/>
+            </StackPanel>
+
+            <Button Command="{Binding ToggleSelectModeCommand}"
+                    Background="Transparent"
+                    HorizontalAlignment="Right">
+                <PathIcon Data="{StaticResource dismiss_regular}" Height="16"/>
+            </Button>
+        </DockPanel>
         
-    </StackPanel>
+    </Carousel>
 </UserControl>

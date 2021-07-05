@@ -7,54 +7,22 @@
              xmlns:v="clr-namespace:Gallery.UI.Views"
              xmlns:c="using:Gallery.UI.Converters"
              xmlns:dd="using:Gallery.UI.DesignData"
-             mc:Ignorable="d" d:DesignWidth="680" d:DesignHeight="550"
+             mc:Ignorable="d" d:DesignWidth="495" d:DesignHeight="550"
              x:Class="Gallery.UI.Views.GalleryView">
 
     <DockPanel Background="#272727">
-        <v:GallerySelectionView DockPanel.Dock="Top"
-                             IsVisible="{Binding HasSelection^}"
-                             Background="#1a1a1a"/>
+        <v:GallerySelectionView DockPanel.Dock="Top" Background="#111111"/>
     
         <ScrollViewer Padding="0,0,10,0">
-            <ItemsRepeater Items="{Binding Items}" Margin="10">
+            <ItemsRepeater Items="{Binding Items}" Margin="5">
                 
                 <ItemsRepeater.Layout>
-                    <WrapLayout HorizontalSpacing="8" VerticalSpacing="15" />
+                    <UniformGridLayout MinRowSpacing="2"/>
                 </ItemsRepeater.Layout>
-                
+
                 <ItemsRepeater.ItemTemplate>
                     <DataTemplate>
-                        <!-- Temp (not sure if this should remain a Button or not) -->
-                        <Button Command="{Binding $parent[v:MainShellView].DataContext.FileViewCommand}"
-                                CommandParameter="{Binding File}"
-                                Classes.isSelected="{Binding IsSelected}"
-                                BorderThickness="2.5"
-                                Padding="7">
-                            
-                            <Button.Styles>
-                                <Style Selector="Button.isSelected">
-                                    <Setter Property="Background" Value="#999999"/>
-                                    <Setter Property="BorderBrush" Value="White"/>
-                                </Style>
-                                <Style Selector="Button.isSelected:pointerover
-                                                 /template/ ContentPresenter#PART_ContentPresenter">
-                                    <Setter Property="Background" Value="#999999"/>
-                                    <Setter Property="BorderBrush" Value="White"/>
-                                </Style>
-                            </Button.Styles>
-
-                            <Grid>
-                                <CheckBox Margin="-1,-7,0,0"
-                                          Command="{Binding $parent[v:GalleryView].DataContext.ToggleSelectCommand}"
-                                          CommandParameter="{Binding}"
-                                          IsChecked="{Binding IsSelected}"
-                                          VerticalAlignment="Top"
-                                          ZIndex="100"
-                                />
-                                <v:GalleryThumbnailView Padding="5"/>
-                            </Grid>
-                            
-                        </Button>
+                        <v:GalleryThumbnailView />
                     </DataTemplate>
                 </ItemsRepeater.ItemTemplate>
                 

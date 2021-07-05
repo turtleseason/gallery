@@ -17,7 +17,7 @@
                 new GalleryFile() { FullPath = @"C:\folder\file1.png" },
                 new GalleryFile() { FullPath = @"C:\folder\file2.txt" },
                 new GalleryFile() { FullPath = @"C:\folder\very_long_file_name_helloooooooooo.gif" },
-                new GalleryFile() { FullPath = @"C:\folder\file3.gif" },
+                new GalleryFile() { FullPath = @"C:\folder\even_longer_file_name_so_long_that_it_can_span_three_lines.gif" },
                 new GalleryFile() { FullPath = @"C:\folder\file4.gif" },
             };
 

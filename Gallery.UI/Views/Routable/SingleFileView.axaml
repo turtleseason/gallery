@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:dd="using:Gallery.UI.DesignData"
+             xmlns:c="using:Gallery.UI.Converters"
              xmlns:v="clr-namespace:Gallery.UI.Views"
              mc:Ignorable="d" d:DesignWidth="680" d:DesignHeight="450"
              x:Class="Gallery.UI.Views.SingleFileView">
@@ -50,13 +51,8 @@
                         </Button>
                     </DockPanel>
                     
-                    <Carousel Classes.editing="{Binding IsEditing}">
-                        
-                        <Carousel.Styles>
-                            <Style Selector="Carousel.editing">
-                                <Setter Property="SelectedIndex" Value="1"/>
-                            </Style>
-                        </Carousel.Styles>
+                    <Carousel SelectedIndex="{Binding IsEditing,
+                                Converter={x:Static c:Converter.BoolToInt}}">
                         
                         <TextBlock Text="{Binding Description}" TextWrapping="Wrap"/>
                         
@@ -78,6 +74,7 @@
                 <GridSplitter Grid.Column="1" ResizeDirection="Columns"/>
 
                 <StackPanel Grid.Column="2" Margin="10">
+                    
                     <DockPanel Margin="0,0,0,10">
                         <TextBlock Classes="h1">Tags</TextBlock>
                         <Button Command="{Binding AddTagCommand}"
@@ -86,6 +83,7 @@
                             <PathIcon Data="{StaticResource edit_regular}" />
                         </Button>
                     </DockPanel>
+                    
                     <ItemsControl Items="{Binding Tags}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -98,6 +96,7 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    
                 </StackPanel>
             </Grid>
         </ScrollViewer>

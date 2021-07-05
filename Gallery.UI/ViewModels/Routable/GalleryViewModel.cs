@@ -34,6 +34,8 @@
 
         private ReadOnlyObservableCollection<GalleryThumbnailViewModel>? _items;
 
+        private bool _selectMode = false;
+
         public GalleryViewModel(IScreen screen, ISelectedFilesService? sfService = null, IDataService? dbService = null)
         {
             HostScreen = screen;
@@ -50,9 +52,11 @@
             {
                 await AddTag(tag);
                 return Unit.Default;
-            });
+            }, HasSelection);
 
+            ToggleSelectModeCommand = ReactiveCommand.Create(ToggleSelectMode);
             ToggleSelectCommand = ReactiveCommand.Create<GalleryThumbnailViewModel>(ToggleSelect);
+            SelectAllCommand = ReactiveCommand.Create(SelectAll);
             DeselectAllCommand = ReactiveCommand.Create(DeselectAll);
 
             _thumbnailsToLoad = new Subject<GalleryThumbnailViewModel>();
@@ -81,14 +85,23 @@
 
         public IScreen HostScreen { get; }
 
+        public ReactiveCommand<Unit, Unit> ToggleSelectModeCommand { get; }
         public ReactiveCommand<Tag?, Unit> AddTagCommand { get; }
         public ReactiveCommand<GalleryThumbnailViewModel, Unit> ToggleSelectCommand { get; }
+        public ReactiveCommand<Unit, Unit> SelectAllCommand { get; }
         public ReactiveCommand<Unit, Unit> DeselectAllCommand { get; }
 
         public ReadOnlyObservableCollection<GalleryThumbnailViewModel>? Items => _items;
 
+        public bool SelectMode { get => _selectMode; set => this.RaiseAndSetIfChanged(ref _selectMode, value); }
+
         public IObservable<int> SelectionCount { get; }
         public IObservable<bool> HasSelection { get; }
+
+        private void ToggleSelectMode()
+        {
+            SelectMode = !SelectMode;
+        }
 
         private void ToggleSelect(GalleryThumbnailViewModel item)
         {
@@ -104,6 +117,18 @@
             }
 
             item.IsSelected = isAdding;
+        }
+
+        private void SelectAll()
+        {
+            _selectedItems.Edit(updater =>
+            {
+                foreach (var vm in _items!)
+                {
+                    updater.AddOrUpdate(vm);
+                    vm.IsSelected = true;
+                }
+            });
         }
 
         private void DeselectAll()

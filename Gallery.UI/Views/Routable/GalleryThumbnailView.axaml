@@ -4,48 +4,79 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:v="clr-namespace:Gallery.UI.Views"
              xmlns:c="clr-namespace:Gallery.UI.Converters"
-             mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="250"
+             mc:Ignorable="d" d:DesignWidth="250" d:DesignHeight="350"
              x:Class="Gallery.UI.Views.GalleryThumbnailView">
-    <StackPanel Width="200">
 
-        <StackPanel.ContextMenu>
-            <ContextMenu IsVisible="{Binding File, Converter={x:Static c:Converter.IsTracked}}">
-                <MenuItem Header="Add tag..."
-                          Command="{Binding $parent[v:GalleryView].DataContext.AddTagCommand}"/>
-            </ContextMenu>
-        </StackPanel.ContextMenu>
+    <Button Command="{Binding $parent[v:MainShellView].DataContext.FileViewCommand}"
+            CommandParameter="{Binding File}"
+            Classes.isSelected="{Binding IsSelected}"
+            Background="Transparent"
+            BorderThickness="2.5"
+            Padding="7">
 
-        <Panel Width="200" Height="200"
-               Classes.has-bg="{Binding Thumbnail, Converter={x:Static ObjectConverters.IsNull}}">
-            <Panel.Styles>
-                <Style Selector="Panel.has-bg">
-                    <Setter Property="Background" Value="Gray"/>
-                </Style>
-            </Panel.Styles>
-            <Image Source="{Binding Thumbnail}" MaxHeight="200"/>
-            <PathIcon Data="{StaticResource document_regular}"
-                      IsVisible="{Binding Thumbnail, Converter={x:Static ObjectConverters.IsNull}}"
-                      Width="50" Height="50"/>
-        </Panel>
+        <Button.Styles>
+            <Style Selector="Button.isSelected
+                   /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="#777777"/>
+                <Setter Property="BorderBrush" Value="White"/>
+            </Style>
+            <Style Selector="Button.isSelected:pointerover
+                    /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="#999999"/>
+                <Setter Property="BorderBrush" Value="White"/>
+            </Style>
+        </Button.Styles>
 
-        <TextBlock Text="{Binding File.Name}"
-                   ToolTip.Tip="{Binding File.FullPath}"
-                   TextWrapping="Wrap"
-                   Width="200"
-                   Margin="0,8,0,5"/>
+        <StackPanel Margin="9,5">
+            <StackPanel.ContextMenu>
+                <ContextMenu IsVisible="{Binding File, Converter={x:Static c:Converter.IsTracked}}">
+                    <MenuItem Header="Add tag..."
+                              Command="{Binding $parent[v:GalleryView].DataContext.AddTagCommand}"/>
+                </ContextMenu>
+            </StackPanel.ContextMenu>
 
-        <ItemsControl Items="{Binding Tags}">
-            <ItemsControl.Styles>
-                <Style Selector="Border">
-                    <Setter Property="Margin" Value="0,5,5,0"/>
-                </Style>
-            </ItemsControl.Styles>
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <WrapPanel/>
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-        </ItemsControl>
+            <Viewbox Height="35" Width="35"
+                     IsVisible="{Binding $parent[v:GalleryView].DataContext.SelectMode}"
+                     HorizontalAlignment="Left"
+                     Margin="-14,-15,0,2"
+                     ZIndex="100">
+                <CheckBox Command="{Binding $parent[v:GalleryView].DataContext.ToggleSelectCommand}"
+                          CommandParameter="{Binding}"
+                          IsChecked="{Binding IsSelected}"/>
+            </Viewbox>
+            
+            <Panel Width="200" Height="200"
+                   Classes.has-bg="{Binding Thumbnail, Converter={x:Static ObjectConverters.IsNull}, FallbackValue=True}"
+                   ToolTip.Tip="{Binding File.FullPath}">
+                <Panel.Styles>
+                    <Style Selector="Panel.has-bg">
+                        <Setter Property="Background" Value="Gray"/>
+                    </Style>
+                </Panel.Styles>
+                <Image Source="{Binding Thumbnail}" MaxHeight="200"/>
+                <PathIcon Data="{StaticResource document_regular}"
+                          IsVisible="{Binding Thumbnail, Converter={x:Static ObjectConverters.IsNull}}"
+                          Width="50" Height="50"/>
+            </Panel>
 
-    </StackPanel>
+            <TextBlock Text="{Binding File.Name}"
+                       ToolTip.Tip="{Binding File.FullPath}"
+                       TextWrapping="Wrap"
+                       TextTrimming="CharacterEllipsis"
+                       Width="200"
+                       Height="36"
+                       Margin="0,8,0,0"/>
+
+            <Panel Height="21">
+                <PathIcon Data="{StaticResource checkmark_regular}"
+                          IsVisible="{Binding File, Converter={x:Static c:Converter.IsTracked}}"
+                          ToolTip.Tip="Tracked file"
+                          HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                          Height="16"
+                          Margin="0,0,-7,-2"/>
+            </Panel>
+
+        </StackPanel>
+
+    </Button>
 </UserControl>
