@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Configuration;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
@@ -39,11 +40,14 @@
             string addFolderSql = @"INSERT INTO Folder(path) VALUES(@Path);
                                     SELECT last_insert_rowid();";
 
-            using (var conn = new SqliteConnection(ConnectionString))
+            return await ExecuteWithRetries(async () =>
             {
-                var resultRowId = await conn.QueryAsync<int>(addFolderSql, new { Path = folderPath });
-                return resultRowId.Single();
-            }
+                using (var conn = new SqliteConnection(ConnectionString))
+                {
+                    var resultRowId = await conn.QueryAsync<int>(addFolderSql, new { Path = folderPath });
+                    return resultRowId.Single();
+                }
+            });
         }
 
         public void DeleteFolder(string folderPath)
@@ -60,10 +64,13 @@
         {
             string addFileSql = @"INSERT INTO File(path, folder_id, thumbnail) VALUES(@Path, @FolderId, @Thumbnail)";
 
-            using (var conn = new SqliteConnection(ConnectionString))
+            await ExecuteWithRetries(async () =>
             {
-                await conn.ExecuteAsync(addFileSql, new { Path = filePath, FolderId = folderId, Thumbnail = thumbnailPath });
-            }
+                using (var conn = new SqliteConnection(ConnectionString))
+                {
+                    await conn.ExecuteAsync(addFileSql, new { Path = filePath, FolderId = folderId, Thumbnail = thumbnailPath });
+                }
+            });
         }
 
         public async Task AddTag(Tag tag, params string[] filePaths)
@@ -90,10 +97,13 @@
                 Group = tag.Group.Name ?? Tag.DefaultGroupName,
             };
 
-            using (var conn = new SqliteConnection(ConnectionString))
+            await ExecuteWithRetries(async () =>
             {
-                await conn.ExecuteAsync(insertSql, parameters);
-            }
+                using (var conn = new SqliteConnection(ConnectionString))
+                {
+                    await conn.ExecuteAsync(insertSql, parameters);
+                }
+            });
         }
 
         public void AddTagGroup(TagGroup group)
@@ -284,6 +294,48 @@
             {
                 conn.Execute(createTablesSql);
             }
+        }
+
+        private async Task ExecuteWithRetries(Func<Task> function)
+        {
+            await ExecuteWithRetries(async () =>
+            {
+                await function();
+                return System.Reactive.Unit.Default;
+            });
+        }
+
+        private async Task<T> ExecuteWithRetries<T>(Func<Task<T>> function)
+        {
+            int retries = 5;
+            int retryDelayMs = 100;
+
+            while (true)
+            {
+                try
+                {
+                    return await function();
+                }
+                catch (SqliteException e) when (IsTransient(e))
+                {
+                    if (retries > 0)
+                    {
+                        retries--;
+                        Trace.TraceError(e.ToString() + $"\n\nRetrying in {retryDelayMs}ms...");
+                        await Task.Delay(retryDelayMs);
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            }
+        }
+
+        private bool IsTransient(SqliteException e)
+        {
+            return e.SqliteErrorCode == 8  // Attempt to write readonly database
+                || e.IsTransient;          // (doesn't appear to be implemented for SQLite yet)
         }
     }
 }

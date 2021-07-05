@@ -17,6 +17,8 @@
 
         private static readonly ISet<string> _knownImageExtensions = GetKnownExtensions();
 
+        private static readonly object _lock = new();
+
         public static async Task<Bitmap?> LoadBitmap(string path)
         {
             // Save some time by skipping files unlikely to be successfully decoded
@@ -30,9 +32,12 @@
                 // Bitmap.DecodeToWidth/Height throws NullReferenceException, Bitmap ctor throws ArgumentException
                 try
                 {
-                    using (Stream s = File.OpenRead(path))
+                    lock (_lock)
                     {
-                        return new Bitmap(s);
+                        using (Stream s = File.OpenRead(path))
+                        {
+                            return new Bitmap(s);
+                        }
                     }
                 }
                 catch (ArgumentException)
@@ -60,9 +65,12 @@
             {
                 try
                 {
-                    using (Stream s = File.OpenRead(path))
+                    lock (_lock)
                     {
-                        return Bitmap.DecodeToHeight(s, 200);
+                        using (Stream s = File.OpenRead(path))
+                        {
+                            return Bitmap.DecodeToHeight(s, 200);
+                        }
                     }
                 }
                 catch (NullReferenceException)
@@ -82,9 +90,13 @@
         {
             await Task.Run(() =>
             {
-                using (Stream s = File.Create(savePath))
+                lock (_lock)
                 {
-                    bitmap.CreateScaledBitmap(thumbnailSize).Save(s);
+                    using (Stream s = File.Create(savePath))
+                    {
+                        bitmap.CreateScaledBitmap(thumbnailSize)
+                            .Save(s);
+                    }
                 }
             });
         }
