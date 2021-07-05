@@ -31,6 +31,8 @@ namespace Gallery.UI
 
             RxApp.DefaultExceptionHandler = Observer.Create<Exception>(HandleUncaughtException);
 
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
             Log.Information("\n\nStarting up~\n");
 
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -44,9 +46,19 @@ namespace Gallery.UI
             base.OnFrameworkInitializationCompleted();
         }
 
-        public void HandleUncaughtException(Exception ex)
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            if (e.ExceptionObject is Exception ex)
+            {
+                HandleUncaughtException(ex);
+            }
+        }
+
+        private void HandleUncaughtException(Exception ex)
         {
             Log.Error(ex, "Unhandled exception:");
+
+            bool tryContinue = false;
 
             #if !DEBUG
 
@@ -54,12 +66,15 @@ namespace Gallery.UI
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 var dialog = new DialogWindow() { DataContext = new ErrorViewModel(ex) };
-                dialog.ShowDialogSync(desktop.MainWindow);
+                tryContinue = dialog.ShowDialogSync<bool?>(desktop.MainWindow) ?? false;
             }
 
             #endif
 
-            throw ex;
+            if (!tryContinue)
+            {
+                Environment.Exit(1);
+            }
         }
     }
 }

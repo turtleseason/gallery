@@ -65,7 +65,7 @@
                         }
                     }, RxApp.MainThreadScheduler))
                 .Merge(_maxParallelThumbnailLoads)
-                .Subscribe();
+                .Subscribe(_ => { }, error => RxApp.DefaultExceptionHandler.OnNext(error));
 
             // This subscription isn't disposed on deactivation, since repopulating can be a bit slow for a large collection;
             // this operates under the assumption that the app will reuse a single GalleryViewModel for its whole lifetime,

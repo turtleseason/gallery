@@ -62,7 +62,7 @@
             NextFileCommand = ReactiveCommand.CreateFromObservable(() => NavigateToFile(1), canExecute);
 
             Observable.FromAsync(() => ImageUtil.LoadBitmap(_file.FullPath), RxApp.MainThreadScheduler)
-                .Subscribe(bitmap => Image = bitmap);
+                .Subscribe(bitmap => Image = bitmap, error => RxApp.DefaultExceptionHandler.OnNext(error));
         }
 
         public string? UrlPathSegment => _file.Name;
