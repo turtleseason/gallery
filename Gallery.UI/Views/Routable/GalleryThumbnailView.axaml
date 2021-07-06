@@ -67,12 +67,12 @@
                        Height="36"
                        Margin="0,8,0,0"/>
 
-            <Panel Height="21">
+            <Panel Height="17">
                 <PathIcon Data="{StaticResource checkmark_regular}"
                           IsVisible="{Binding File, Converter={x:Static c:Converter.IsTracked}}"
                           ToolTip.Tip="Tracked file"
                           HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                          Height="16"
+                          Height="12"
                           Margin="0,0,-7,-2"/>
             </Panel>
 

@@ -156,6 +156,8 @@
         private void OnItemRemoved(GalleryThumbnailViewModel item)
         {
             _selectedItems.Remove(key: item.File.FullPath);
+            item.Thumbnail?.Dispose();
+            item.Thumbnail = null;
         }
 
         private async Task AddTag(Tag? tag)

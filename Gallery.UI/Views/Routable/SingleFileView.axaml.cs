@@ -7,11 +7,14 @@ namespace Gallery.UI.Views
 
     using Gallery.UI.ViewModels;
 
+    using ReactiveUI;
+
     public partial class SingleFileView : ReactiveUserControl<SingleFileViewModel>
     {
         public SingleFileView()
         {
             InitializeComponent();
+            this.WhenActivated(_ => { });
         }
 
         private void InitializeComponent()

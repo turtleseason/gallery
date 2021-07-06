@@ -5,6 +5,7 @@
     using System.Diagnostics;
     using System.Linq;
     using System.Reactive;
+    using System.Reactive.Disposables;
     using System.Reactive.Linq;
     using System.Threading.Tasks;
 
@@ -53,16 +54,26 @@
 
             var canExecute = _selectedFiles.ToObservableChangeSet(x => x.FullPath)
                 .Watch(_file.FullPath)
-                .Where(change => change.Reason is DynamicData.ChangeReason.Add or DynamicData.ChangeReason.Remove)
-                .Select(x => x.Reason == DynamicData.ChangeReason.Add && x.Current.Equals(_file));
+                .Where(change => change.Reason is ChangeReason.Add or ChangeReason.Remove)
+                .Select(x => x.Reason == ChangeReason.Add && x.Current.Equals(_file));
 
             AddTagCommand = ReactiveCommand.CreateFromTask(AddTag);
 
             PreviousFileCommand = ReactiveCommand.CreateFromObservable(() => NavigateToFile(-1), canExecute);
             NextFileCommand = ReactiveCommand.CreateFromObservable(() => NavigateToFile(1), canExecute);
 
-            Observable.FromAsync(() => ImageUtil.LoadBitmap(_file.FullPath), RxApp.MainThreadScheduler)
-                .Subscribe(bitmap => Image = bitmap, error => RxApp.DefaultExceptionHandler.OnNext(error));
+            this.WhenActivated(disposables =>
+            {
+                Observable.FromAsync(() => ImageUtil.LoadBitmap(_file.FullPath), RxApp.MainThreadScheduler)
+                    .Subscribe(bitmap => Image = bitmap, error => RxApp.DefaultExceptionHandler.OnNext(error));
+
+                Disposable.Create(() =>
+                {
+                    Image?.Dispose();
+                    Image = null;
+                })
+                .DisposeWith(disposables);
+            });
         }
 
         public string? UrlPathSegment => _file.Name;

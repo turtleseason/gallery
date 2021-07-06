@@ -7,7 +7,7 @@
              xmlns:v="clr-namespace:Gallery.UI.Views"
              xmlns:c="using:Gallery.UI.Converters"
              xmlns:dd="using:Gallery.UI.DesignData"
-             mc:Ignorable="d" d:DesignWidth="495" d:DesignHeight="550"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="550"
              x:Class="Gallery.UI.Views.GalleryView">
 
     <DockPanel Background="#272727">
@@ -17,7 +17,7 @@
             <ItemsRepeater Items="{Binding Items}" Margin="5">
                 
                 <ItemsRepeater.Layout>
-                    <UniformGridLayout MinRowSpacing="2"/>
+                    <UniformGridLayout MinRowSpacing="2" MinColumnSpacing="2"/>
                 </ItemsRepeater.Layout>
 
                 <ItemsRepeater.ItemTemplate>
