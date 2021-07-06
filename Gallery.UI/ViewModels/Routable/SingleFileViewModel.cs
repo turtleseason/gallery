@@ -49,7 +49,8 @@
 
             if (file is TrackedFile trackedFile)
             {
-                Tags = new ObservableCollection<Tag>(trackedFile.Tags);
+                Tags = new ObservableCollection<Tag>(trackedFile.Tags.OrderBy(tag =>
+                    tag.Group.Name == Tag.DefaultGroupName ? string.Empty : tag.Group.Name));
             }
 
             var canExecute = _selectedFiles.ToObservableChangeSet(x => x.FullPath)
