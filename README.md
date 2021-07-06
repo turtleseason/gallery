@@ -1,15 +1,18 @@
-# WIP
+# Gallery (WIP)
 
-(WIP)
+Image organizer for desktop - browse and search images (and other files), group them into collections, and add custom tags and metadata without modifying the original files or keeping multiple copies of the same image on the file system.
 
-Image and file organizer - browse files, add custom tags and metadata, and use them to search and group files into collections, all without modifying or copying the original files on the system.
+## Screenshots (WIP)
+![image](./img/wip_screenshot.png)
+
+![image](./img/wip_screenshot2.png)
 
 ## Mockups
-![image](./img/mockup_gallery.png) ![image](./img/mockup_gallery_searchbar_crop.png)
+![image](./img/mockup_gallery.png)
 
 ![image](./img/mockup_searchpage.png)
 
-![image](./img/mockup_singlefile1.png) ![image](./img/mockup_singlefile2.png)
+![image](./img/mockup_singlefile.png)
 
 ## Built with
 
