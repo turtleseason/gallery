@@ -42,6 +42,7 @@
         <Grid Grid.Row="3"
               ColumnDefinitions="2*, Auto, *"
               RowDefinitions="Auto, *"
+              IsVisible="{Binding IsTracked}"
               MinHeight="50"
               Margin="10">
             
@@ -55,7 +56,6 @@
             </Grid.Styles>
             
             <DockPanel Grid.Column="0" Grid.Row="0"
-                       IsVisible="{Binding IsTracked}"
                        Margin="0,0,0,10">
                 <TextBlock Classes="h1">Description</TextBlock>
                 <Button Command="{Binding ToggleEdit}"
@@ -65,7 +65,7 @@
                 </Button>
             </DockPanel>
 
-            <ScrollViewer Grid.Column="0" Grid.Row="1" IsVisible="{Binding IsTracked}">
+            <ScrollViewer Grid.Column="0" Grid.Row="1">
                 <Carousel SelectedIndex="{Binding IsEditing,
                             Converter={x:Static c:Converter.BoolToInt}}"
                           Margin="0,0,18,0">

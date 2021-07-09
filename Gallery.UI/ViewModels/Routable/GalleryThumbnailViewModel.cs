@@ -17,28 +17,9 @@
 
     public class GalleryThumbnailViewModel : ViewModelBase
     {
-        private static Bitmap? _defaultTrackedThumbnail;  // temp
-
         private GalleryFile _file;
         private Bitmap? _thumbnail;
         private bool _isSelected = false;
-
-        static GalleryThumbnailViewModel()  // temp
-        {
-            try
-            {
-                var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                using (Stream s = assets.Open(new Uri("avares://Gallery.UI/Assets/thumbnail_placeholder.png")))
-                {
-                    _defaultTrackedThumbnail = Bitmap.DecodeToWidth(s, 200);
-                }
-            }
-            catch (NullReferenceException)
-            {
-                // Happens in test runner (Avalonia.Current has nothing registered);
-                // ignore for now since the placeholder image setup is temporary
-            }
-        }
 
         public GalleryThumbnailViewModel(GalleryFile file)
         {
@@ -62,8 +43,7 @@
             }
             else if (File is TrackedFile)
             {
-                // Known non-image file (could just return null & use the default file icon)
-                return _defaultTrackedThumbnail;
+                return null;
             }
             else
             {

@@ -21,13 +21,10 @@
                     <TextBlock Text="{Binding Name}">
                         <TextBlock.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Is tracked!" IsVisible="{Binding IsTracked^}"/>
-                                <MenuItem Header="Track folder"
-                                          Command="{Binding $parent[TreeView].DataContext.TrackFolderCommand}"
-                                          CommandParameter="{Binding}"
-                                          IsVisible="{Binding !IsTracked^}"/>
-                                <MenuItem Header="Track all selected folders"
-                                          Command="{Binding $parent[TreeView].DataContext.TrackSelectedFoldersCommand}"/>
+                                <MenuItem Header="Track selected folder(s)"
+                                          Command="{Binding $parent[TreeView].DataContext.TrackCommand}"/>
+                                <MenuItem Header="Untrack selected folder(s)"
+                                          Command="{Binding $parent[TreeView].DataContext.UntrackCommand}"/>
                             </ContextMenu>
                         </TextBlock.ContextMenu>
                     </TextBlock>

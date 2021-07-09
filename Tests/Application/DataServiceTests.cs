@@ -72,7 +72,7 @@ namespace Tests
             _conn = new SqliteConnection(_connectionString);
             _conn.Open();
 
-            _mockFileSystem = new Mock<IFileSystemUtil>(MockBehavior.Strict);
+            _mockFileSystem = new Mock<IFileSystemUtil>();
             _mockFileSystem.Setup(mock => mock.GetFiles(It.IsAny<string>())).Returns((string path) =>
                 new List<GalleryFile>()
                 {
@@ -114,7 +114,7 @@ namespace Tests
             await _database.TrackFolder(untrackedPath);
             await _database.TrackFolder(trackedPath);
 
-            _database.UntrackFolder(untrackedPath);
+            await _database.UntrackFolders(untrackedPath);
 
             var folders = _conn.Query<string>("SELECT path FROM Folder").ToList();
             Assert.AreEqual(folders.Count, 1);
@@ -223,7 +223,7 @@ namespace Tests
             IReadOnlyCollection<string> result = null;
             _database.TrackedFolders().ToCollection().Subscribe(folders => result = folders);
 
-            _database.UntrackFolder(paths[0]);
+            await _database.UntrackFolders(paths[0]);
             Assert.That(result, Is.EquivalentTo(new string[] { paths[1] }));
 
             await _database.TrackFolder(paths[2]);
@@ -260,7 +260,7 @@ namespace Tests
             await _database.TrackFolder(path);
             Assert.IsTrue(result);
 
-            _database.UntrackFolder(path);
+            await _database.UntrackFolders(path);
             Assert.IsFalse(result);
         }
 

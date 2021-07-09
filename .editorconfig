@@ -217,3 +217,7 @@ dotnet_naming_style.begins_with_underscore.required_prefix = _
 dotnet_naming_style.begins_with_underscore.required_suffix = 
 dotnet_naming_style.begins_with_underscore.word_separator = 
 dotnet_naming_style.begins_with_underscore.capitalization = camel_case
+
+# Suppress code analysis rules
+
+dotnet_diagnostic.CA1822.severity = none

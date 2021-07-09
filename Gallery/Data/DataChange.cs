@@ -2,7 +2,7 @@
 {
     public enum DataChangeReason { Add, Update, Remove }
 
-    public enum DataChangeEntity { File, Tag, TagGroup }
+    public enum DataChangeEntity { File, Tag, TagGroup, Folder }
 
     public class DataChange
     {

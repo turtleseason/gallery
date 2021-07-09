@@ -28,13 +28,7 @@
         </Button.Styles>
 
         <StackPanel Margin="9,5">
-            <StackPanel.ContextMenu>
-                <ContextMenu IsVisible="{Binding File, Converter={x:Static c:Converter.IsTracked}}">
-                    <MenuItem Header="Add tag..."
-                              Command="{Binding $parent[v:GalleryView].DataContext.AddTagCommand}"/>
-                </ContextMenu>
-            </StackPanel.ContextMenu>
-
+            
             <Viewbox Height="35" Width="35"
                      IsVisible="{Binding $parent[v:GalleryView].DataContext.SelectMode}"
                      HorizontalAlignment="Left"

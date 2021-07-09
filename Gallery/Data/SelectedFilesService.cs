@@ -136,16 +136,21 @@
 
             if (_params.IncludeUntracked)
             {
-                foreach (string path in folders)
+                AddOrUpdateUntracked(parameters, folders);
+            }
+        }
+
+        private void AddOrUpdateUntracked(IList<ISearchParameter> parameters, params string[] folders)
+        {
+            foreach (string path in folders)
+            {
+                IEnumerable<GalleryFile>? files = _fsService.GetFiles(path);
+                if (files != null)
                 {
-                    IEnumerable<GalleryFile>? files = _fsService.GetFiles(path);
-                    if (files != null)
-                    {
-                        // Skip files that are already tracked & in the collection
-                        _filesCache.AddOrUpdate(files
-                            .Where(file => !_filesCache.Lookup(file.FullPath).HasValue)
-                            .Where(file => ISearchParameter.MatchesAllParameters(file, parameters)));
-                    }
+                    // Skip files that are already tracked & in the collection
+                    _filesCache.AddOrUpdate(files
+                        .Where(file => !_filesCache.Lookup(file.FullPath).HasValue)
+                        .Where(file => ISearchParameter.MatchesAllParameters(file, parameters)));
                 }
             }
         }
@@ -191,6 +196,17 @@
                     var trackedFile = (TrackedFile)lookup.Value;
                     trackedFile.Description = file.Description;
                     _filesCache.AddOrUpdate(trackedFile);
+                }
+            }
+            else if (change.Reason == DataChangeReason.Remove && change.EntityType == DataChangeEntity.Folder)
+            {
+                var path = (string)change.Item;
+                _filesCache.Remove(_filesCache.Items.Where(file => file.Directory == path));
+
+                // Ensure files are re-added to the collection as untracked files if necessary
+                if (_params.IncludeUntracked)
+                {
+                    AddOrUpdateUntracked(_params.Parameters, path);
                 }
             }
         }

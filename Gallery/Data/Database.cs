@@ -16,10 +16,6 @@
 
     // Todo: Handling SQL exceptions?
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Performance",
-        "CA1822:Mark members as static",
-        Justification = "Use instance methods to ensure that the DB is initialized (via the constructor) before accessing it")]
     internal class Database
     {
         public Database()
@@ -50,14 +46,19 @@
             });
         }
 
-        public void DeleteFolder(string folderPath)
+        // Returns the IDs of all folders that were successfully deleted.
+        public async Task<IEnumerable<int>> DeleteFolders(params string[] folderPaths)
         {
-            string deleteFolderSql = @"DELETE FROM Folder WHERE path = @Path";
+            string deleteFolderSql = @"SELECT folder_id FROM Folder WHERE path in @Paths;
+                                       DELETE FROM Folder WHERE path in @Paths";
 
-            using (var conn = new SqliteConnection(ConnectionString))
+            return await ExecuteWithRetries(async () =>
             {
-                conn.Execute(deleteFolderSql, new { Path = folderPath });
-            }
+                using (var conn = new SqliteConnection(ConnectionString))
+                {
+                    return await conn.QueryAsync<int>(deleteFolderSql, new { Paths = folderPaths });
+                }
+            });
         }
 
         public async Task AddFile(string filePath, int folderId, string? thumbnailPath = null)
@@ -102,6 +103,27 @@
                 using (var conn = new SqliteConnection(ConnectionString))
                 {
                     await conn.ExecuteAsync(insertSql, parameters);
+                }
+            });
+        }
+
+        public async Task DeleteUnusedTags()
+        {
+            string sql = @"
+                DELETE FROM Tag WHERE tag_id IN (
+                        SELECT t.tag_id
+                          FROM Tag t
+                     LEFT JOIN FileTag ft
+                            ON t.tag_id = ft.tag_id
+                      GROUP BY t.tag_id
+                        HAVING COUNT(ft.tag_id) = 0
+                );";
+
+            await ExecuteWithRetries(async () =>
+            {
+                using (var conn = new SqliteConnection(ConnectionString))
+                {
+                    await conn.ExecuteAsync(sql);
                 }
             });
         }

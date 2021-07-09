@@ -47,33 +47,28 @@
             var selectedItemsObservable = SelectedItems.ToObservableChangeSet(x => x.FullPath);
             var trackedFoldersObservable = _dbService.TrackedFolders();
 
-            // TrackFolder & TrackSelectedFolders commands can each execute
-            // if SelectedItems contains at least one item that isn't already tracked
-            // and if the other command isn't currently executing.
-            var canExecute = selectedItemsObservable.Cast(x => x.FullPath)
+            var canTrack = selectedItemsObservable.Cast(x => x.FullPath)
                 .Except(trackedFoldersObservable)
                 .Count()
                 .Select(x => x > 0);
 
-            Subject<bool> trackAllIsExecuting = new Subject<bool>();
+            var canUntrack = ObservableCacheEx.And(selectedItemsObservable.Cast(x => x.FullPath), trackedFoldersObservable)
+                .Count()
+                .Select(x => x > 0);
 
-            TrackFolderCommand = ReactiveCommand.CreateFromObservable<FolderListItemViewModel, Unit>(TrackFolder,
-                canExecute.CombineLatest(trackAllIsExecuting, (canExecute, isExecuting) => canExecute && !isExecuting));
-            TrackSelectedFoldersCommand = ReactiveCommand.CreateFromObservable(TrackSelectedFolders,
-                canExecute.CombineLatest(TrackFolderCommand.IsExecuting, (canExecute, isExecuting) => canExecute && !isExecuting));
+            Subject<bool> isUntracking = new Subject<bool>();
 
-            TrackSelectedFoldersCommand.IsExecuting.Subscribe(trackAllIsExecuting);
+            TrackCommand = ReactiveCommand.CreateFromObservable(TrackSelectedFolders,
+                canTrack.CombineLatest(isUntracking, (canExecute, isExecuting) => canExecute && !isExecuting));
+            UntrackCommand = ReactiveCommand.CreateFromObservable(UntrackSelectedFolders,
+                canUntrack.CombineLatest(TrackCommand.IsExecuting, (canExecute, isExecuting) => canExecute && !isExecuting));
+
+            UntrackCommand.IsExecuting.Subscribe(isUntracking);
 
             TrackFoldersProgress = new BehaviorSubject<float?>(null);
-
-            TrackFolderCommand.IsExecuting.Where(x => x)
+            TrackCommand.IsExecuting.Where(x => x)
                 .Subscribe(_ => Interactions.ReportCommandProgress(
-                    TrackFolderCommand.IsExecuting,
-                    Observable.Return("Tracking folder")));
-
-            TrackSelectedFoldersCommand.IsExecuting.Where(x => x)
-                .Subscribe(_ => Interactions.ReportCommandProgress(
-                    TrackSelectedFoldersCommand.IsExecuting,
+                    TrackCommand.IsExecuting,
                     Observable.Return("Tracking folders"),
                     TrackFoldersProgress));
 
@@ -90,7 +85,8 @@
             this.WhenActivated((disposables) =>
             {
                 disposable.DisposeWith(disposables);
-                TrackSelectedFoldersCommand.DisposeWith(disposables);
+                TrackCommand.DisposeWith(disposables);
+                UntrackCommand.DisposeWith(disposables);
             });
         }
 
@@ -102,8 +98,8 @@
 
         public ReactiveCommand<Unit, Unit> ShowAllTrackedCommand { get; }
 
-        public ReactiveCommand<FolderListItemViewModel, Unit> TrackFolderCommand { get; }
-        public ReactiveCommand<Unit, Unit> TrackSelectedFoldersCommand { get; }
+        public ReactiveCommand<Unit, Unit> TrackCommand { get; }
+        public ReactiveCommand<Unit, Unit> UntrackCommand { get; }
 
         private BehaviorSubject<float?> TrackFoldersProgress { get; }
 
@@ -162,6 +158,15 @@
                     await TrackFolder(x);
                 }, RxApp.MainThreadScheduler))
                 .Concat();
+        }
+
+        private IObservable<Unit> UntrackSelectedFolders()
+        {
+            var paths = SelectedItems.Select(vm => vm.FullPath).ToArray();
+
+            Log.Information("Untracking {Folders}", string.Join(", ", paths));
+
+            return Observable.StartAsync(() => _dbService.UntrackFolders(paths), RxApp.MainThreadScheduler);
         }
     }
 }

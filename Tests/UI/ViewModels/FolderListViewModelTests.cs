@@ -88,7 +88,7 @@
             IEnumerable<FolderListItemViewModel> notSelected = _vm.Items.SelectMany(item => item.Children.TakeLast(item.Children.Count - 2));
             _vm.SelectedItems.Add(items);
 
-            await _vm.TrackSelectedFoldersCommand.Execute();
+            await _vm.TrackCommand.Execute();
 
             foreach (var item in items)
             {
@@ -111,7 +111,7 @@
             await WaitForTopLevelChildrenToLoad();
 
             bool? canExecute = null;
-            _vm.TrackSelectedFoldersCommand.CanExecute.Subscribe(x => canExecute = x);
+            _vm.TrackCommand.CanExecute.Subscribe(x => canExecute = x);
 
             var trackedAndUntrackedItems = _vm.Items.SelectMany(item => item.Children.Take(2));
             _vm.SelectedItems.Add(trackedAndUntrackedItems);
@@ -132,7 +132,7 @@
             _vm.SelectedItems.Add(selectedItems);
 
             bool? canExecute = null;
-            _vm.TrackSelectedFoldersCommand.CanExecute.Subscribe(x => canExecute = x);
+            _vm.TrackCommand.CanExecute.Subscribe(x => canExecute = x);
 
             Assert.IsTrue(canExecute);
 

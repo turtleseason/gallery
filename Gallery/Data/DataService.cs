@@ -32,7 +32,7 @@
         IEnumerable<TagGroup> GetAllTagGroups();
 
         Task TrackFolder(string folderPath);
-        void UntrackFolder(string folderPath);
+        Task UntrackFolders(params string[] folderPath);
 
         Task AddTag(Tag tag, params string[] filePaths);
         void CreateTagGroup(TagGroup group);
@@ -132,11 +132,28 @@
 
         /// Removes the given folder and any files in it from the database.
         /// (If the folder is not tracked, nothing happens.)
-        public void UntrackFolder(string folderPath)
+        public async Task UntrackFolders(params string[] folderPaths)
         {
-            _database.DeleteFolder(folderPath);
+            _trackedFolders.RemoveKeys(folderPaths);
 
-            _trackedFolders.RemoveKey(folderPath);
+            var deletedIds = await _database.DeleteFolders(folderPaths);
+
+            foreach (string path in folderPaths)
+            {
+                var change = new DataChange(path, DataChangeReason.Remove, DataChangeEntity.Folder);
+                OnChange?.Invoke(this, new DataChangedEventArgs(change));
+            }
+
+            // Clean up remaining data
+            await Task.Run(() =>
+            {
+                foreach (int folderId in deletedIds)
+                {
+                    _fsService.DeleteDirectory(GetThumbnailFolder(folderId));
+                }
+            });
+
+            await _database.DeleteUnusedTags();
         }
 
         /// Adds a tag to the given files, skipping any untracked files.
@@ -188,7 +205,7 @@
             Bitmap? img = await ImageUtil.LoadBitmap(path);
             if (img != null)
             {
-                await AddImageInfo(file, img, Path.Combine(_thumbnailFolder, folderId.ToString()));
+                await AddImageInfo(file, img, GetThumbnailFolder(folderId));
             }
 
             await _database.AddFile(path, folderId, file.Thumbnail);
@@ -220,6 +237,11 @@
             file.Thumbnail = Path.Combine(thumbnailFolder, Path.GetFileName(file.FullPath).Replace('.', '_') + ".png");
 
             await ImageUtil.SaveThumbnail(bitmap, file.Thumbnail, thumbnailSize);
+        }
+
+        private string GetThumbnailFolder(int folderId)
+        {
+            return Path.Combine(_thumbnailFolder, folderId.ToString());
         }
     }
 }
