@@ -3,35 +3,40 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:c="using:Gallery.UI.Converters"
-             mc:Ignorable="d" d:DesignWidth="680"
+             mc:Ignorable="d" d:DesignWidth="680" d:DesignHeight="50"
              x:Class="Gallery.UI.Views.GallerySelectionView">
     <Carousel SelectedIndex="{Binding SelectMode, Converter={x:Static c:Converter.BoolToInt}}"
               Margin="15,5">
-        
+
         <Button Command="{Binding ToggleSelectModeCommand}"
                 Content="Select..."
                 HorizontalAlignment="Right"/>
 
-        <DockPanel>
-            <StackPanel Orientation="Horizontal" Spacing="10">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Classes="h2" Text="{Binding SelectionCount^}" VerticalAlignment="Center"/>
-                    <TextBlock Classes="h2" Text=" file(s) selected" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                </StackPanel>
-
-                <Button Command="{Binding AddTagCommand}" Content="Add tag..." Margin="0,0,10,0"/>
-        
-                <Button Command="{Binding SelectAllCommand}" Content="Select all"/>
-        
-                <Button Command="{Binding DeselectAllCommand}" Content="Deselect all"/>
+        <Grid ColumnDefinitions="auto,*,auto,auto" HorizontalAlignment="Stretch">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,20,0">
+                <TextBlock Classes="h2" Text="{Binding SelectionCount^}" VerticalAlignment="Center"/>
+                <TextBlock Classes="h2" Text=" file(s) selected" VerticalAlignment="Center"/>
             </StackPanel>
 
-            <Button Command="{Binding ToggleSelectModeCommand}"
-                    Background="Transparent"
-                    HorizontalAlignment="Right">
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                <Button Command="{Binding AddTagCommand}" Content="Add tag..."/>
+
+                <Button Command="{Binding EditTagsCommand}" Content="Edit tags..."/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" Margin="0,0,15,0">
+                <Button Command="{Binding SelectAllCommand}" Content="Select all"/>
+
+                <Button Command="{Binding DeselectAllCommand}" Content="Deselect all"/>
+
+            </StackPanel>
+
+            <Button Grid.Column="3"
+                    Command="{Binding ToggleSelectModeCommand}"
+                    Background="Transparent">
                 <PathIcon Data="{StaticResource dismiss_regular}" Height="16"/>
             </Button>
-        </DockPanel>
-        
+        </Grid>
+
     </Carousel>
 </UserControl>

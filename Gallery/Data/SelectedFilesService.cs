@@ -178,6 +178,29 @@
                     }
                 });
             }
+            else if (change.Reason == DataChangeReason.Remove && change.EntityType == DataChangeEntity.Tag)
+            {
+                _filesCache.Edit(updater =>
+                {
+                    foreach (string file in change.AffectedFiles)
+                    {
+                        var lookup = _filesCache.Lookup(file);
+                        if (lookup.HasValue && lookup.Value is TrackedFile trackedFile)
+                        {
+                            trackedFile.Tags.Remove((Tag)change.Item);
+
+                            if (!ISearchParameter.MatchesAllParameters(trackedFile, _params.Parameters))
+                            {
+                                _filesCache.Remove(trackedFile);
+                            }
+                            else
+                            {
+                                _filesCache.AddOrUpdate(trackedFile);
+                            }
+                        }
+                    }
+                });
+            }
             else if (change.Reason == DataChangeReason.Add && change.EntityType == DataChangeEntity.File)
             {
                 var file = (TrackedFile)change.Item;
@@ -207,6 +230,22 @@
                 if (_params.IncludeUntracked)
                 {
                     AddOrUpdateUntracked(_params.Parameters, path);
+                }
+            }
+            else if (change.Reason == DataChangeReason.Update && change.EntityType == DataChangeEntity.TagGroup)
+            {
+                TagGroup newGroup = (TagGroup)change.Item;
+                TagGroup original = (TagGroup)change.Original!;
+                foreach (GalleryFile file in _filesCache.Items)
+                {
+                    if (file is TrackedFile tracked)
+                    {
+                        foreach (Tag tag in tracked.Tags.Where(tag => tag.Group.Equals(original)).ToList())
+                        {
+                            tracked.Tags.Remove(tag);
+                            tracked.Tags.Add(new Tag(tag.Name, tag.Value, newGroup));
+                        }
+                    }
                 }
             }
         }

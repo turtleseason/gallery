@@ -48,11 +48,8 @@
             SelectionCount = _selectedItems.Connect().Count().StartWith(0);
             HasSelection = SelectionCount.Select(count => count > 0);
 
-            AddTagCommand = ReactiveCommand.CreateFromTask<Tag?, Unit>(async tag =>
-            {
-                await AddTag(tag);
-                return Unit.Default;
-            }, HasSelection);
+            AddTagCommand = ReactiveCommand.CreateFromTask(AddTag, HasSelection);
+            EditTagsCommand = ReactiveCommand.CreateFromTask(EditTags, HasSelection);
 
             ToggleSelectModeCommand = ReactiveCommand.Create(ToggleSelectMode);
             ToggleSelectCommand = ReactiveCommand.Create<GalleryThumbnailViewModel>(ToggleSelect);
@@ -86,7 +83,8 @@
         public IScreen HostScreen { get; }
 
         public ReactiveCommand<Unit, Unit> ToggleSelectModeCommand { get; }
-        public ReactiveCommand<Tag?, Unit> AddTagCommand { get; }
+        public ReactiveCommand<Unit, Unit> AddTagCommand { get; }
+        public ReactiveCommand<Unit, Unit> EditTagsCommand { get; }
         public ReactiveCommand<GalleryThumbnailViewModel, Unit> ToggleSelectCommand { get; }
         public ReactiveCommand<Unit, Unit> SelectAllCommand { get; }
         public ReactiveCommand<Unit, Unit> DeselectAllCommand { get; }
@@ -160,16 +158,22 @@
             item.Thumbnail = null;
         }
 
-        private async Task AddTag(Tag? tag)
+        private async Task AddTag()
         {
             var files = _selectedItems.Items.Select(vm => vm.File.FullPath).ToArray();
 
-            tag ??= (Tag?)await Interactions.ShowDialog.Handle(new AddTagsViewModel(_dbService));
+            Tag? tag = (Tag?)await Interactions.ShowDialog.Handle(new AddTagsViewModel(_dbService));
 
             if (tag != null)
             {
                 await _dbService.AddTag((Tag)tag, files);
             }
+        }
+
+        private async Task EditTags()
+        {
+            var files = _selectedItems.Items.Select(vm => vm.File).ToArray();
+            await Interactions.ShowDialog.Handle(new EditTagsViewModel(_dbService, files));
         }
     }
 }

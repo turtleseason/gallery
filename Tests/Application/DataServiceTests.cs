@@ -31,15 +31,15 @@ namespace Tests
     {
         private string _connectionString;
 
-        private DataService _database;
+        private DataService _dataService;
         private SqliteConnection _conn;
         private Mock<IFileSystemUtil> _mockFileSystem;
 
         /// Gets all files in the given folder(s) in the current mocked file system (for testing against results from the database).
-        public IEnumerable<GalleryFile> GetMockFiles(params string[] paths)
+        public IEnumerable<GalleryFile> GetMockFiles(params string[] folderPaths)
         {
             List<GalleryFile> result = new();
-            foreach (string path in paths)
+            foreach (string path in folderPaths)
             {
                 result.AddRange(_mockFileSystem.Object.GetFiles(path));
             }
@@ -47,9 +47,9 @@ namespace Tests
             return result;
         }
 
-        public IEnumerable<string> GetMockFilePaths(params string[] paths)
+        public IEnumerable<string> GetMockFilePaths(params string[] folderPaths)
         {
-            return GetMockFiles(paths).Select(file => file.FullPath);
+            return GetMockFiles(folderPaths).Select(file => file.FullPath);
         }
 
         [OneTimeSetUp]
@@ -80,7 +80,7 @@ namespace Tests
                     new GalleryFile { FullPath  = Path.Combine(path, "file2.jpg") },
                     new GalleryFile { FullPath  = Path.Combine(path, "a.txt") },
                 });
-            _database = new DataService(_mockFileSystem.Object);
+            _dataService = new DataService(_mockFileSystem.Object);
         }
 
         [TearDown]
@@ -94,7 +94,7 @@ namespace Tests
         {
             string folderPath = @"C:\fakepath";
 
-            await _database.TrackFolder(folderPath);
+            await _dataService.TrackFolder(folderPath);
 
             var folders = _conn.Query<string>("SELECT path FROM Folder").ToList();
             Assert.AreEqual(folders.Count, 1);
@@ -111,10 +111,10 @@ namespace Tests
             string untrackedPath = @"C:\fakepath";
             string trackedPath = @"C:\other";
 
-            await _database.TrackFolder(untrackedPath);
-            await _database.TrackFolder(trackedPath);
+            await _dataService.TrackFolder(untrackedPath);
+            await _dataService.TrackFolder(trackedPath);
 
-            await _database.UntrackFolders(untrackedPath);
+            await _dataService.UntrackFolders(untrackedPath);
 
             var folders = _conn.Query<string>("SELECT path FROM Folder").ToList();
             Assert.AreEqual(folders.Count, 1);
@@ -134,13 +134,13 @@ namespace Tests
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
             foreach (string path in paths)
             {
-                await _database.TrackFolder(path);
+                await _dataService.TrackFolder(path);
             }
 
-            var path1Files = _database.GetFiles(folders: paths[0]).Select(x => x.FullPath);
+            var path1Files = _dataService.GetFiles(folders: paths[0]).Select(x => x.FullPath);
             Assert.That(path1Files, Is.EquivalentTo(GetMockFilePaths(paths[0])));
 
-            var allFiles = _database.GetFiles(folders: paths).Select(x => x.FullPath);
+            var allFiles = _dataService.GetFiles(folders: paths).Select(x => x.FullPath);
             Assert.That(allFiles, Is.EquivalentTo(GetMockFilePaths(paths)));
         }
 
@@ -152,13 +152,13 @@ namespace Tests
 
             Tag tag = TestUtil.TestTags[2];
 
-            await _database.TrackFolder(path);
-            _database.CreateTagGroup(tag.Group);
-            await _database.AddTag(tag, taggedFiles);
+            await _dataService.TrackFolder(path);
+            _dataService.CreateTagGroup(tag.Group);
+            await _dataService.AddTag(tag, taggedFiles);
 
             ISearchParameter[] searchParameters = { new Parameter.Tagged(tag) };
 
-            var result = _database.GetFiles(searchParameters, path).Select(file => file.FullPath);
+            var result = _dataService.GetFiles(searchParameters, path).Select(file => file.FullPath);
 
             Assert.That(result, Is.EquivalentTo(taggedFiles));
         }
@@ -169,10 +169,10 @@ namespace Tests
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
             foreach (string path in paths)
             {
-                await _database.TrackFolder(path);
+                await _dataService.TrackFolder(path);
             }
 
-            var files = _database.GetFiles().Select(x => x.FullPath);
+            var files = _dataService.GetFiles().Select(x => x.FullPath);
 
             Assert.That(files, Is.EquivalentTo(GetMockFilePaths(paths)));
         }
@@ -184,10 +184,10 @@ namespace Tests
             string folder = @"C:\fakepath";
             string file = GetMockFilePaths(folder).First();
 
-            await _database.TrackFolder(folder);
-            await _database.AddTag(tag, file);
+            await _dataService.TrackFolder(folder);
+            await _dataService.AddTag(tag, file);
 
-            IEnumerable<TrackedFile> results = _database.GetFiles(folders: folder);
+            IEnumerable<TrackedFile> results = _dataService.GetFiles(folders: folder);
             foreach (TrackedFile result in results)
             {
                 if (result.FullPath == file)
@@ -203,11 +203,11 @@ namespace Tests
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
             foreach (string path in paths)
             {
-                await _database.TrackFolder(path);
+                await _dataService.TrackFolder(path);
             }
 
             IReadOnlyCollection<string> result = null;
-            _database.TrackedFolders().ToCollection().Subscribe(folders => result = folders);
+            _dataService.TrackedFolders().ToCollection().Subscribe(folders => result = folders);
 
             Assert.That(result, Is.EquivalentTo(paths));
         }
@@ -217,19 +217,19 @@ namespace Tests
         {
             string[] paths = { @"C:\fakepath", @"C:\other", @"D:\fakepath" };
 
-            await _database.TrackFolder(paths[0]);
-            await _database.TrackFolder(paths[1]);
+            await _dataService.TrackFolder(paths[0]);
+            await _dataService.TrackFolder(paths[1]);
 
             IReadOnlyCollection<string> result = null;
-            _database.TrackedFolders().ToCollection().Subscribe(folders => result = folders);
+            _dataService.TrackedFolders().ToCollection().Subscribe(folders => result = folders);
 
-            await _database.UntrackFolders(paths[0]);
+            await _dataService.UntrackFolders(paths[0]);
             Assert.That(result, Is.EquivalentTo(new string[] { paths[1] }));
 
-            await _database.TrackFolder(paths[2]);
+            await _dataService.TrackFolder(paths[2]);
             Assert.That(result, Is.EquivalentTo(new string[] { paths[1], paths[2] }));
 
-            await _database.TrackFolder(paths[0]);
+            await _dataService.TrackFolder(paths[0]);
             Assert.That(result, Is.EquivalentTo(paths));
         }
 
@@ -239,13 +239,13 @@ namespace Tests
             string untrackedPath = @"C:\fakepath";
             string trackedPath = @"C:\other";
 
-            await _database.TrackFolder(trackedPath);
+            await _dataService.TrackFolder(trackedPath);
 
             bool? result = null;
-            _database.IsTracked(untrackedPath).Take(1).Subscribe(x => result = x);
+            _dataService.IsTracked(untrackedPath).Take(1).Subscribe(x => result = x);
             Assert.IsFalse(result);
 
-            _database.IsTracked(trackedPath).Take(1).Subscribe(x => result = x);
+            _dataService.IsTracked(trackedPath).Take(1).Subscribe(x => result = x);
             Assert.IsTrue(result);
         }
 
@@ -255,12 +255,12 @@ namespace Tests
             string path = @"C:\fakepath";
 
             bool? result = null;
-            _database.IsTracked(path).Subscribe(x => result = x);
+            _dataService.IsTracked(path).Subscribe(x => result = x);
 
-            await _database.TrackFolder(path);
+            await _dataService.TrackFolder(path);
             Assert.IsTrue(result);
 
-            await _database.UntrackFolders(path);
+            await _dataService.UntrackFolders(path);
             Assert.IsFalse(result);
         }
 
@@ -269,17 +269,17 @@ namespace Tests
         {
             string[] paths = GetMockFilePaths(@"C:\fakepath").ToArray();
 
-            await _database.TrackFolder(@"C:\fakepath");
+            await _dataService.TrackFolder(@"C:\fakepath");
 
             TagGroup group = TestUtil.TestTagGroups[1];
-            _database.CreateTagGroup(group);
+            _dataService.CreateTagGroup(group);
 
             Tag[] tags = { new Tag("Tag"), new Tag("Tag2", "Potato", group), new Tag("Tag2", group: group) };
-            await _database.AddTag(tags[0], paths);
-            await _database.AddTag(tags[1], paths[0], paths[1]);
-            await _database.AddTag(tags[2], paths[2]);
+            await _dataService.AddTag(tags[0], paths);
+            await _dataService.AddTag(tags[1], paths[0], paths[1]);
+            await _dataService.AddTag(tags[2], paths[2]);
 
-            var result = _database.GetAllTags();
+            var result = _dataService.GetAllTags();
 
             Assert.That(tags, Is.SubsetOf(result));
         }
@@ -289,13 +289,116 @@ namespace Tests
         {
             TagGroup group = TestUtil.TestTagGroups[1];
 
-            _database.CreateTagGroup(group);
+            _dataService.CreateTagGroup(group);
 
-            var result = _database.GetAllTagGroups();
+            var result = _dataService.GetAllTagGroups();
 
             Assert.AreEqual(result.Count(), 2);
             Assert.That(result.Contains(group));
-            Assert.That(result.Contains(new TagGroup(Tag.DefaultGroupName)));
+            Assert.That(result.Contains(new TagGroup(TagGroup.DefaultGroupName)));
+        }
+
+        [Test]
+        public async Task UpdateTagGroup_UpdatesNameAndColor()
+        {
+            TagGroup original = new TagGroup("cool group", "#00ff00");
+            TagGroup updated = new TagGroup("cooler group", "#0000ff");
+
+            string folder = @"C:\fakepath";
+            string file = GetMockFilePaths(folder).First();
+
+            await _dataService.TrackFolder(folder);
+            _dataService.CreateTagGroup(original);
+            await _dataService.AddTag(new Tag("Test tag", group: original), file);
+
+            _dataService.UpdateTagGroup(original, updated);
+
+            TrackedFile updatedFile = _dataService.GetFiles(folders: folder).Single(x => x.FullPath == file);
+            Assert.Contains(new Tag("Test tag", group: updated), updatedFile.Tags.ToArray());
+        }
+
+        [Test]
+        public async Task DeleteTags_OnlyDeletesTagsWithMatchingValues()
+        {
+            string folder = @"C:\fakepath";
+            string file = GetMockFilePaths(folder).First();
+            await _dataService.TrackFolder(folder);
+
+            Tag tag1 = new Tag("Tag", "with value");
+            Tag tag2 = new Tag("Tag", "with a different value :O");
+
+            await _dataService.AddTag(tag1, file);
+            await _dataService.AddTag(tag2, file);
+
+            await _dataService.DeleteTags(new[] { tag1 }, file);
+
+            TrackedFile resultFile = _dataService.GetFiles(folders: folder).Single(x => x.FullPath == file);
+
+            Assert.IsFalse(resultFile.Tags.Contains(tag1));
+            Assert.IsTrue(resultFile.Tags.Contains(tag2));
+        }
+
+        [Test]
+        public async Task DeleteTags_DeletesTagsWithNullValue()
+        {
+            string folder = @"C:\fakepath";
+            string file = GetMockFilePaths(folder).First();
+            await _dataService.TrackFolder(folder);
+
+            Tag tag1 = new Tag("Tag");
+
+            await _dataService.AddTag(tag1, file);
+
+            await _dataService.DeleteTags(new[] { tag1 }, file);
+
+            TrackedFile resultFile = _dataService.GetFiles(folders: folder).Single(x => x.FullPath == file);
+
+            Assert.IsFalse(resultFile.Tags.Contains(tag1));
+        }
+
+        [Test]
+        public async Task DeleteTags_CleansUpUnusedTags()
+        {
+            string folder = @"C:\fakepath";
+            string[] files = GetMockFilePaths(folder).ToArray();
+            await _dataService.TrackFolder(folder);
+
+            Tag tag1 = new Tag("New tag that doesn't exist in the database :O");
+
+            await _dataService.AddTag(tag1, files);
+            Assert.IsTrue(_dataService.GetAllTags().Contains(tag1));
+
+            await _dataService.DeleteTags(new[] { tag1 }, files);
+            Assert.IsFalse(_dataService.GetAllTags().Contains(tag1));
+        }
+
+        [Test]
+        public async Task DeleteTags_DeletesAllTagsOnAllFiles()
+        {
+            string folder = @"C:\fakepath";
+            string[] files = GetMockFilePaths(folder).ToArray();
+            Tag[] tagsToDelete = { new Tag("Tag1"), new Tag("Tag2", "abc") };
+            Tag[] tagsToNotDelete = { new Tag("Tag3") };
+
+            await _dataService.TrackFolder(folder);
+
+            // File 0: Tag A
+            // File 1: Tag A & B
+            // File 2: Tag A & B & C
+            await _dataService.AddTag(tagsToDelete[0], files);
+            await _dataService.AddTag(tagsToDelete[1], files[1], files[2]);
+            await _dataService.AddTag(tagsToNotDelete[0], files[2]);
+
+            await _dataService.DeleteTags(tagsToDelete, files);
+
+            IEnumerable<TrackedFile> resultFiles = _dataService.GetFiles(folders: folder);
+            var file0Tags = resultFiles.Single(x => x.FullPath == files[0]).Tags;
+            var file1Tags = resultFiles.Single(x => x.FullPath == files[1]).Tags;
+            var file2Tags = resultFiles.Single(x => x.FullPath == files[2]).Tags;
+
+            Assert.IsFalse(file0Tags.Concat(file1Tags).Concat(file2Tags).Contains(tagsToDelete[0]));
+            Assert.IsFalse(file0Tags.Concat(file1Tags).Concat(file2Tags).Contains(tagsToDelete[1]));
+            Assert.Contains(tagsToNotDelete[0], file2Tags.ToArray());
         }
     }
 }

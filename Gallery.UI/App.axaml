@@ -9,7 +9,7 @@
 
         <DataTemplate DataType="m:Tag">
             <Border ToolTip.Tip="{Binding FullString}"
-                    Background="{Binding Group.Color, TargetNullValue={x:Static Brushes.DarkMagenta}}"
+                    Background="{Binding Group.Color}"
                     CornerRadius="5"
                     Padding="5">
                 <TextBlock Text="{Binding FullString}"
@@ -17,10 +17,19 @@
                            Foreground="{Binding Group.Color, Converter={x:Static c:Converter.ContrastText}}"/>
             </Border>
         </DataTemplate>
+
+        <DataTemplate DataType="m:TagGroup">
+            <TextBlock Background="{Binding Color}"
+                       Foreground="{Binding Color, Converter={x:Static c:Converter.ContrastText}}"
+                       TextTrimming="CharacterEllipsis"
+                       Text="{Binding Name}"/>
+        </DataTemplate>
+        
     </Application.DataTemplates>
 
     <Application.Styles>
         <FluentTheme Mode="Dark"/>
         <StyleInclude Source="/Icons.axaml"/>
+        <StyleInclude Source="/Styles.axaml"/>
     </Application.Styles>
 </Application>

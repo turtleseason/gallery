@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Gallery.UI.ViewModels"
+             Width="450"
+             mc:Ignorable="d"
+             x:Class="Gallery.UI.Views.EditTagGroupsView">
+    <StackPanel Margin="15" Spacing="15">
+        
+        <Grid ColumnDefinitions="Auto,*,Auto">
+            <RadioButton Grid.Column="0"
+                         GroupName="CreateOrEdit"
+                         Content="New group:"
+                         IsChecked="{Binding !EditGroup}"/>
+            <RadioButton Grid.Column="1"
+                         Name="EditRadio"
+                         GroupName="CreateOrEdit"
+                         Content="Edit group:"
+                         IsEnabled="{Binding CanEdit}"
+                         HorizontalAlignment="Right"
+                         Margin="0,0,10,0"/>
+            <ComboBox Grid.Column="2"
+                      Items="{Binding TagGroups}"
+                      SelectedItem="{Binding SelectedGroup}"
+                      IsEnabled="{Binding ElementName=EditRadio, Path=IsChecked}"
+                      MinWidth="75" MaxWidth="200"/>
+        </Grid>
+
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <Label VerticalAlignment="Center">Name:</Label>
+            <TextBox Text="{Binding Name}"
+                     MaxWidth="170"/>
+            
+            <Label VerticalAlignment="Center">Color:</Label>
+            <TextBox Text="{Binding Color}"
+                     IsEnabled="{Binding !IsEditingDefaultGroup^}"
+                     MaxLength="7"
+                     Width="90"/>
+            <Border CornerRadius="3" Width="30" Height="30"
+                    Background="{Binding LastValidColor^}"
+                    BorderBrush="Gray"
+                    BorderThickness="1.5"/>
+        </StackPanel>
+
+        <StackPanel>
+            <TextBlock Foreground="Red" IsVisible="{Binding !IsNameValid^}" TextWrapping="Wrap">
+                Name can't be empty.
+            </TextBlock>
+            <TextBlock Foreground="Red" IsVisible="{Binding !IsNameUnique^}" TextWrapping="Wrap">
+                A group with this name already exists.
+            </TextBlock>
+            <TextBlock Foreground="Red" IsVisible="{Binding !IsColorValid^}" TextWrapping="Wrap">
+                Color should be a hexadecimal value (e.g. #000000, #FF66FF).
+            </TextBlock>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+            <Button Content="Cancel" Command="{Binding CloseCommand}"/>
+            <Button Content="OK" Command="{Binding SaveCommand}"/>
+        </StackPanel>
+    </StackPanel>
+
+    <Design.DataContext>
+        <vm:EditTagGroupsViewModel/>
+    </Design.DataContext>
+</UserControl>

@@ -24,11 +24,11 @@ namespace Gallery.UI.Views
                 AutoCompleteBox tagNameBox = this.FindControl<AutoCompleteBox>("TagName");
 
                 tagNameBox.Events().LostFocus
-                    .Subscribe(_ => ViewModel?.SetTagGroupIfExists())
+                    .Subscribe(_ => ViewModel?.SetTagGroupIfTagExists())
                     .DisposeWith(disposables);
 
                 tagNameBox.Events().DropDownClosed
-                    .Subscribe(_ => ViewModel?.SetTagGroupIfExists())
+                    .Subscribe(_ => ViewModel?.SetTagGroupIfTagExists())
                     .DisposeWith(disposables);
             });
         }

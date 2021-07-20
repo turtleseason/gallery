@@ -1,6 +1,8 @@
 ﻿namespace Tests
 {
     using System;
+    using System.Diagnostics;
+    using System.Linq;
 
     using Gallery.Data;
     using Gallery.Entities;
@@ -43,54 +45,33 @@
         }
 
         [Test]
-        public void AddTagsCommand_UsesDefaultGroupIfSelectedGroupIsInvalid()
+        public void SetTagGroupIfTagExists_SetsCorrectValues_WhenTagExists()
         {
-            _vm.Name = "Name";
-            _vm.SelectedGroup = new TagGroup(null, null);
+            TagGroup initialGroup = _vm.SelectedGroup;
 
-            object result = null;
-            _vm.CloseCommand.Subscribe(x => result = x);
+            Tag tag = TestUtil.TestTags[2];
+            Assert.AreNotEqual(initialGroup, tag.Group);
 
-            _vm.AddTagsCommand.Execute().Subscribe();
+            _vm.Name = tag.Name;
+            _vm.SetTagGroupIfTagExists();
 
-            Assert.AreEqual((result as Tag?)?.Group.Name, Tag.DefaultGroupName);
+            Assert.IsTrue(_vm.LockSelectedGroup);
+            Assert.AreEqual(tag.Group, _vm.SelectedGroup);
         }
 
         [Test]
-        public void AddGroupCommand_CreatesAndSelectsGroup()
+        public void SetTagGroupIfTagExists_SetsCorrectValues_WhenTagDoesNotExist()
         {
-            TagGroup group = new TagGroup("MyGroup", "#ABC123");
+            TagGroup initialGroup = _vm.SelectedGroup;
 
-            _vm.IsAddingGroup = true;
-            _vm.GroupName = group.Name;
-            _vm.Color = group.Color;
+            string notATag = "Nonexistent Tag Name";
+            Assert.That(!_dbService.Object.GetAllTags().Any(tag => tag.Name == notATag));
 
-            _dbService.Setup(mock => mock.CreateTagGroup(group));
+            _vm.Name = notATag;
+            _vm.SetTagGroupIfTagExists();
 
-            _vm.AddGroupCommand.Execute().Subscribe();
-
-            _dbService.Verify(mock => mock.CreateTagGroup(group), Times.Once);
-            Assert.AreEqual(group, _vm.SelectedGroup);
-        }
-
-        [TestCase("Name", "")]
-        [TestCase("", "#ff66ff")]
-        [TestCase("    ", "#ff66ff")]
-        [TestCase("Name", "#12345")]
-        [TestCase("Name", "#12345 ")]
-        [TestCase("Name", "#1234567")]
-        [TestCase("Name", "ff66ff")]
-        [TestCase("Name", "#ff66gf")]
-        public void AddGroupCommand_CannotExecuteWithInvalidInput(string name, string color)
-        {
-            bool? canExecute = null;
-            _vm.AddGroupCommand.CanExecute.Subscribe(x => canExecute = x);
-
-            _vm.IsAddingGroup = true;
-            _vm.GroupName = name;
-            _vm.Color = color;
-
-            Assert.IsFalse(canExecute);
+            Assert.AreEqual(initialGroup, _vm.SelectedGroup);
+            Assert.IsFalse(_vm.LockSelectedGroup);
         }
     }
 }

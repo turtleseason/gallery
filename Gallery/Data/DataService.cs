@@ -35,7 +35,10 @@
         Task UntrackFolders(params string[] folderPath);
 
         Task AddTag(Tag tag, params string[] filePaths);
+        Task DeleteTags(IEnumerable<Tag> tags, params string[] filePaths);
+
         void CreateTagGroup(TagGroup group);
+        void UpdateTagGroup(TagGroup original, TagGroup updated);
 
         void UpdateDescription(string description, string filePath);
     }
@@ -140,8 +143,7 @@
 
             foreach (string path in folderPaths)
             {
-                var change = new DataChange(path, DataChangeReason.Remove, DataChangeEntity.Folder);
-                OnChange?.Invoke(this, new DataChangedEventArgs(change));
+                NotifyChange(path, DataChangeReason.Remove, DataChangeEntity.Folder);
             }
 
             // Clean up remaining data
@@ -171,14 +173,38 @@
             // Todo: get the actual tag obj back from database (in case group is inaccurate)
             // [or keep tag -> tagGroups map in-memory for easier reference]
 
-            var change = new DataChange(tag, DataChangeReason.Add, DataChangeEntity.Tag, filePaths);
-            OnChange?.Invoke(this, new DataChangedEventArgs(change));
+            NotifyChange(tag, DataChangeReason.Add, DataChangeEntity.Tag, files: filePaths);
         }
 
-        // Can be used to update the color; may want to make a separate method to edit/rename groups instead?
+        public async Task DeleteTags(IEnumerable<Tag> tags, params string[] filePaths)
+        {
+            if (filePaths.Length == 0 || !tags.Any())
+            {
+                return;
+            }
+
+            foreach (Tag tag in tags)
+            {
+                await _database.DeleteTag(tag, filePaths);
+                NotifyChange(tag, DataChangeReason.Remove, DataChangeEntity.Tag, files: filePaths);
+            }
+
+            await _database.DeleteUnusedTags();
+        }
+
+
         public void CreateTagGroup(TagGroup group)
         {
             _database.AddTagGroup(group);
+
+            NotifyChange(group, DataChangeReason.Add, DataChangeEntity.TagGroup);
+        }
+
+        public void UpdateTagGroup(TagGroup original, TagGroup updated)
+        {
+            _database.UpdateTagGroup(original, updated);
+
+            NotifyChange(updated, DataChangeReason.Update, DataChangeEntity.TagGroup, original);
         }
 
         // Note: the TrackedFile in the update notification doesn't include tags
@@ -189,8 +215,7 @@
 
             if (file != null)
             {
-                var change = new DataChange(file, DataChangeReason.Update, DataChangeEntity.File);
-                OnChange?.Invoke(this, new DataChangedEventArgs(change));
+                NotifyChange(file, DataChangeReason.Update, DataChangeEntity.File);
             }
         }
 
@@ -217,8 +242,7 @@
 
             // Make sure the tags on the created TrackedFile match the tag groups in the DB
             // (keeping an in memory tag -> tagGroup lookup might help with this)
-            var change = new DataChange(file, DataChangeReason.Add, DataChangeEntity.File);
-            OnChange?.Invoke(this, new DataChangedEventArgs(change));
+            NotifyChange(file, DataChangeReason.Add, DataChangeEntity.File);
         }
 
         // Adds image-specific default tags to the TrackedFile and saves a thumbnail.
@@ -242,6 +266,12 @@
         private string GetThumbnailFolder(int folderId)
         {
             return Path.Combine(_thumbnailFolder, folderId.ToString());
+        }
+
+        private void NotifyChange(object item, DataChangeReason reason, DataChangeEntity entity, object? original = null, params string[] files)
+        {
+            var change = new DataChange(item, reason, entity, original, files);
+            OnChange?.Invoke(this, new DataChangedEventArgs(change));
         }
     }
 }

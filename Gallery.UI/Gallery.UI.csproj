@@ -33,6 +33,9 @@
     <Compile Update="Views\Dialogs\AddTagsView.axaml.cs">
       <DependentUpon>AddTagsView.axaml</DependentUpon>
     </Compile>
+    <Compile Update="Views\Dialogs\EditTagGroupsView.axaml.cs">
+      <DependentUpon>EditTagGroupsView.axaml</DependentUpon>
+    </Compile>
     <Compile Update="Views\Routable\GallerySelectionView.axaml.cs">
       <DependentUpon>GallerySelectionView.axaml</DependentUpon>
     </Compile>

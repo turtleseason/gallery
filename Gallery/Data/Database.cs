@@ -95,7 +95,7 @@
                 Paths = filePaths,
                 tag.Name,
                 tag.Value,
-                Group = tag.Group.Name ?? Tag.DefaultGroupName,
+                Group = tag.Group.Name ?? TagGroup.DefaultGroupName,
             };
 
             await ExecuteWithRetries(async () =>
@@ -103,6 +103,38 @@
                 using (var conn = new SqliteConnection(ConnectionString))
                 {
                     await conn.ExecuteAsync(insertSql, parameters);
+                }
+            });
+        }
+
+        public async Task DeleteTag(Tag tag, params string[] filePaths)
+        {
+            string sql = $@"
+                DELETE FROM FileTag
+                 WHERE {(tag.Value == null ? "FileTag.tag_value IS NULL"
+                                           : "FileTag.tag_value = @TagValue")}
+                   AND tag_id IN (
+                        SELECT tag_id
+                          FROM Tag
+                         WHERE name = @TagName
+                )  AND file_id IN (
+                        SELECT file_id
+                          FROM File
+                         WHERE path IN @FilePaths
+                );";
+
+            var parameters = new
+            {
+                TagValue = tag.Value,
+                TagName = tag.Name,
+                FilePaths = filePaths,
+            };
+
+            await ExecuteWithRetries(async () =>
+            {
+                using (var conn = new SqliteConnection(ConnectionString))
+                {
+                    await conn.ExecuteAsync(sql, parameters);
                 }
             });
         }
@@ -135,6 +167,25 @@
             using (var conn = new SqliteConnection(ConnectionString))
             {
                 conn.Execute(insertSql, new { group.Name, group.Color });
+            }
+        }
+
+        public void UpdateTagGroup(TagGroup original, TagGroup updated)
+        {
+            string sql = @"UPDATE OR IGNORE TagGroup
+                              SET name = @Name, color = @Color
+                            WHERE name = @OldName";
+
+            var parameters = new
+            {
+                updated.Name,
+                updated.Color,
+                OldName = original.Name,
+            };
+
+            using (var conn = new SqliteConnection(ConnectionString))
+            {
+                conn.Execute(sql, parameters);
             }
         }
 
@@ -290,7 +341,7 @@
                 CREATE TABLE IF NOT EXISTS TagGroup (
                     group_id INTEGER PRIMARY KEY NOT NULL,
                     name VARCHAR UNIQUE NOT NULL,
-                    color VARCHAR
+                    color VARCHAR NOT NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS Tag (
@@ -309,7 +360,8 @@
                     FOREIGN KEY (tag_id) REFERENCES Tag(tag_id) ON DELETE CASCADE
                 );
 
-                INSERT OR IGNORE INTO TagGroup(name) VALUES('{Tag.DefaultGroupName}');
+                INSERT OR IGNORE INTO TagGroup(name, color) VALUES(
+                    '{TagGroup.DefaultGroupName}', '{TagGroup.DefaultGroupColor}');
             ";
 
             using (var conn = new SqliteConnection(ConnectionString))

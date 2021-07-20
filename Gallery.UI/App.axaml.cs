@@ -57,10 +57,10 @@ namespace Gallery.UI
         private void HandleUncaughtException(Exception ex)
         {
             Log.Error(ex, "Unhandled exception:");
-
+#if DEBUG
+            throw ex;
+#else
             bool tryContinue = false;
-
-            #if !DEBUG
 
             // (Show notification dialog synchronously to block program execution until user closes the dialog)
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -69,12 +69,11 @@ namespace Gallery.UI
                 tryContinue = dialog.ShowDialogSync<bool?>(desktop.MainWindow) ?? false;
             }
 
-            #endif
-
             if (!tryContinue)
             {
                 Environment.Exit(1);
             }
+#endif
         }
     }
 }

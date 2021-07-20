@@ -50,7 +50,7 @@
             if (file is TrackedFile trackedFile)
             {
                 Tags = new ObservableCollection<Tag>(trackedFile.Tags.OrderBy(tag =>
-                    tag.Group.Name == Tag.DefaultGroupName ? string.Empty : tag.Group.Name));
+                    tag.Group.Name == TagGroup.DefaultGroupName ? string.Empty : tag.Group.Name));
             }
 
             var canExecute = _selectedFiles.ToObservableChangeSet(x => x.FullPath)
@@ -59,6 +59,7 @@
                 .Select(x => x.Reason == ChangeReason.Add && x.Current.Equals(_file));
 
             AddTagCommand = ReactiveCommand.CreateFromTask(AddTag);
+            EditTagsCommand = ReactiveCommand.CreateFromTask(EditTags);
 
             PreviousFileCommand = ReactiveCommand.CreateFromObservable(() => NavigateToFile(-1), canExecute);
             NextFileCommand = ReactiveCommand.CreateFromObservable(() => NavigateToFile(1), canExecute);
@@ -82,6 +83,7 @@
         public IScreen HostScreen { get; }
 
         public ReactiveCommand<Unit, Unit> AddTagCommand { get; }
+        public ReactiveCommand<Unit, Unit> EditTagsCommand { get; }
 
         public ReactiveCommand<Unit, Unit> PreviousFileCommand { get; }
         public ReactiveCommand<Unit, Unit> NextFileCommand { get; }
@@ -144,6 +146,11 @@
                 // Todo: return the tag from AddTag & use it when updating (to make sure the group is accurate)
                 Tags?.Add(tag.Value);
             }
+        }
+
+        private async Task EditTags()
+        {
+            await Interactions.ShowDialog.Handle(new EditTagsViewModel(_dataService, _file));
         }
     }
 }

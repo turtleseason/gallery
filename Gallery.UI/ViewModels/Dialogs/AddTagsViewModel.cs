@@ -6,7 +6,7 @@
     using System.Linq;
     using System.Reactive;
     using System.Reactive.Linq;
-    using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
 
     using Gallery.Data;
     using Gallery.Entities;
@@ -17,17 +17,12 @@
 
     public class AddTagsViewModel : DialogViewModelBase
     {
-        private static readonly Regex _hexColorRegex = new("^#[a-fA-F0-9]{6}$");
-
         private readonly IDataService _dbService;
 
         private string _name = string.Empty;
         private string _value = string.Empty;
         private TagGroup _selectedGroup;
-        private bool _selectedGroupMismatch = false;
-        private bool _isAddingGroup = false;
-        private string _groupName = string.Empty;
-        private string _groupColor = "#FF66FF";
+        private bool _lockSelectedGroup = false;
 
         public AddTagsViewModel(IDataService? dbService = null)
         {
@@ -35,37 +30,26 @@
 
             WindowTitle = "Add tags";
 
-            var canAddTags = this.WhenAnyValue(
-                x => x.Name,
-                x => x.IsAddingGroup,
-                (name, isAddingGroup) => !string.IsNullOrWhiteSpace(name) && !isAddingGroup);
+            var canAddTag = this.WhenAnyValue(x => x.Name, name => !string.IsNullOrWhiteSpace(name));
 
-            var canAddGroup = this.WhenAnyValue(
-                x => x.IsAddingGroup,
-                x => x.GroupName,
-                x => x.Color,
-                (isAddingGroup, groupName, color) => isAddingGroup && !string.IsNullOrWhiteSpace(groupName) && _hexColorRegex.IsMatch(color));
-
-            AddTagsCommand = ReactiveCommand.Create(AddTagsAndClose, canAddTags);
-            AddGroupCommand = ReactiveCommand.Create(AddGroup, canAddGroup);
-
-            LastValidColor = this.WhenAnyValue(x => x.Color).Where(color => _hexColorRegex.IsMatch(color));
+            AddTagsCommand = ReactiveCommand.Create(AddTagsAndClose, canAddTag);
+            EditTagGroupsCommand = ReactiveCommand.CreateFromTask(EditTagGroups);
 
             Tags = new ObservableCollection<Tag>(_dbService.GetAllTags()
                 .GroupBy(x => x.Name)
                 .Select(group => new Tag(group.Key, group: group.First().Group)));
-            AvailableGroups = new ObservableCollection<TagGroup>(_dbService.GetAllTagGroups());
 
+            AvailableGroups = new ObservableCollection<TagGroup>(_dbService.GetAllTagGroups());
             _selectedGroup = AvailableGroups.First();
 
-            this.WhenAnyValue(x => x.SelectedGroup).Subscribe(_ => CheckIfSelectedGroupMismatch());
-            this.WhenAnyValue(x => x.Name).Subscribe(_ => SelectedGroupMismatch = false);
+            // Reset LockSelectedGroup when the user starts typing in the Name field
+            this.WhenAnyValue(x => x.Name).Subscribe(_ => LockSelectedGroup = false);
         }
 
         public AddTagsViewModel() : this(null) { }
 
         public ReactiveCommand<Unit, Unit> AddTagsCommand { get; }
-        public ReactiveCommand<Unit, Unit> AddGroupCommand { get; }
+        public ReactiveCommand<Unit, Unit> EditTagGroupsCommand { get; }
 
         public ObservableCollection<Tag> Tags { get; set; }
         public ObservableCollection<TagGroup> AvailableGroups { get; set; }
@@ -75,22 +59,12 @@
 
         public TagGroup SelectedGroup { get => _selectedGroup; set => this.RaiseAndSetIfChanged(ref _selectedGroup, value); }
 
-        // SelectedGroupMismatch is true when Name matches an existing tag whose associated group is not SelectedGroup.
-        // (It's not checked while the user is actively typing in the Name field.)
-        public bool SelectedGroupMismatch { get => _selectedGroupMismatch; set => this.RaiseAndSetIfChanged(ref _selectedGroupMismatch, value); }
+        /// Don't allow the user to change the tag group for tags that already exist.
+        public bool LockSelectedGroup { get => _lockSelectedGroup; set => this.RaiseAndSetIfChanged(ref _lockSelectedGroup, value); }
 
-        public bool IsAddingGroup { get => _isAddingGroup; set => this.RaiseAndSetIfChanged(ref _isAddingGroup, value); }
-
-        public string GroupName { get => _groupName; set => this.RaiseAndSetIfChanged(ref _groupName, value); }
-        public string Color { get => _groupColor; set => this.RaiseAndSetIfChanged(ref _groupColor, value); }
-        public IObservable<string> LastValidColor { get; }
-
-        public void ToggleAddGroupControls()
-        {
-            IsAddingGroup = !IsAddingGroup;
-        }
-
-        public void SetTagGroupIfExists()
+        /// Called from the View when the tag name input loses focus (because changing the selected tag group
+        /// in the middle of typing is probably a little too aggressive)
+        public void SetTagGroupIfTagExists()
         {
             // TODO: translate tags to some kind of dictionary/hashtable? Or call a db method..?
             // (maybe db offers "Get tag names" dictionary tagName key -> tagGroup value?)
@@ -98,44 +72,45 @@
             if (lookup.Name != null)
             {
                 SelectedGroup = lookup.Group;
+                LockSelectedGroup = true;
             }
-
-            SelectedGroupMismatch = false;
-        }
-
-        private void CheckIfSelectedGroupMismatch()
-        {
-            // again, do faster lookup somehow
-            var lookup = Tags.FirstOrDefault(x => x.Name == Name);
-            SelectedGroupMismatch = lookup.Name != null && !lookup.Group.Equals(SelectedGroup);
         }
 
         private void AddTagsAndClose()
         {
-            if (SelectedGroup.Name == null)
-            {
-                SelectedGroup = AvailableGroups.First();
-            }
+            SetTagGroupIfTagExists();
+
+            Debug.Assert(SelectedGroup.Name != null, "AddTagsAndClose: SelectedGroup is not a valid tag group");
 
             string? tagValue = string.IsNullOrWhiteSpace(Value) ? null : Value;
             var tag = new Tag(Name, tagValue, SelectedGroup);
-            // use SelectedTag & take that group if it exists? since updating is a separate thing
-            // (or we could just call the separate update method if there's a mismatch)
 
             CloseCommand.Execute(tag).Subscribe();
         }
 
-        private void AddGroup()
+        private async Task EditTagGroups()
         {
-            var group = new TagGroup(GroupName, Color);
+            var result = ((TagGroup? Original, TagGroup Result)?)await Interactions.ShowDialog.Handle(new EditTagGroupsViewModel());
 
-            _dbService.CreateTagGroup(group);
+            if (result != null)
+            {
+                TagGroup? original = result.Value.Original;
+                TagGroup group = result.Value.Result;
 
-            // TODO: check whether the add was successful first (ignore if dupe)
-            AvailableGroups.Add(group);
-            SelectedGroup = group;
+                if (original.HasValue)
+                {
+                    int index = AvailableGroups.IndexOf(original.Value);
+                    Debug.Assert(index >= 0, "EditTagGroups: Edited group was not originally in AvailableGroups");
 
-            IsAddingGroup = false;
+                    AvailableGroups[index] = group;
+                }
+                else
+                {
+                    AvailableGroups.Add(group);
+                }
+
+                SelectedGroup = group;
+            }
         }
     }
 }

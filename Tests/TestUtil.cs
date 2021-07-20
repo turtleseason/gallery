@@ -11,8 +11,9 @@
     {
         public static readonly TagGroup[] TestTagGroups =
         {
-            new TagGroup(Tag.DefaultGroupName),
+            new TagGroup(TagGroup.DefaultGroupName),
             new TagGroup("Group", "#ff66ff"),
+            new TagGroup("Group 2", "#ABCDEF"),
         };
 
         public static readonly Tag[] TestTags =

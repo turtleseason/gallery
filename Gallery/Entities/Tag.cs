@@ -2,13 +2,11 @@
 {
     public readonly struct Tag
     {
-        public static readonly string DefaultGroupName = "None";
-
         public Tag(string name, string? value = null, TagGroup? group = null)
         {
             Name = name;
             Value = value;
-            Group = group ?? new TagGroup(DefaultGroupName);
+            Group = group ?? new TagGroup(TagGroup.DefaultGroupName);
         }
 
         /// Name should always be initialized to a non-null (and non-empty/whitespace) value
