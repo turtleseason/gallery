@@ -3,14 +3,35 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:c="using:Gallery.UI.Converters"
-             mc:Ignorable="d" d:DesignWidth="680" d:DesignHeight="50"
-             x:Class="Gallery.UI.Views.GallerySelectionView">
+             mc:Ignorable="d" d:DesignWidth="680" MaxHeight="80"
+             x:Class="Gallery.UI.Views.GalleryToolbarView">
     <Carousel SelectedIndex="{Binding SelectMode, Converter={x:Static c:Converter.BoolToInt}}"
+              VerticalAlignment="Center"
               Margin="15,5">
 
-        <Button Command="{Binding ToggleSelectModeCommand}"
-                Content="Select..."
-                HorizontalAlignment="Right"/>
+        <Grid ColumnDefinitions="auto, *, auto">
+
+            <Button Grid.Column="0"
+                    Command="{Binding ClearSearchCommand}"
+                    IsVisible="{Binding HasSearch^}"
+                    Content="Clear search"
+                    VerticalAlignment="Top"/>
+            
+            <TextBlock Grid.Column="1"
+                       Text="{Binding SearchString^}"
+                       IsVisible="{Binding HasSearch^}"
+                       TextWrapping="Wrap"
+                       TextTrimming="WordEllipsis"
+                       ToolTip.Tip="{Binding SearchString^}"
+                       VerticalAlignment="Center"
+                       Margin="10,0,10,0"/>
+            
+            <Button Grid.Column="2"
+                    Command="{Binding ToggleSelectModeCommand}"
+                    Content="Select files..."
+                    VerticalAlignment="Top"/>
+        </Grid>
+
 
         <Grid ColumnDefinitions="auto,*,auto,auto" HorizontalAlignment="Stretch">
             <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,20,0">

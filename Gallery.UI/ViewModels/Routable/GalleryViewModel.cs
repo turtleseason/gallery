@@ -16,6 +16,7 @@
 
     using Gallery.Data;
     using Gallery.Entities;
+    using Gallery.Entities.SearchParameters;
     using Gallery.UI;
 
     using ReactiveUI;
@@ -52,9 +53,12 @@
             EditTagsCommand = ReactiveCommand.CreateFromTask(EditTags, HasSelection);
 
             ToggleSelectModeCommand = ReactiveCommand.Create(ToggleSelectMode);
+
             ToggleSelectCommand = ReactiveCommand.Create<GalleryThumbnailViewModel>(ToggleSelect);
             SelectAllCommand = ReactiveCommand.Create(SelectAll);
             DeselectAllCommand = ReactiveCommand.Create(DeselectAll);
+
+            ClearSearchCommand = ReactiveCommand.Create(ClearSearch);
 
             _thumbnailsToLoad = new Subject<GalleryThumbnailViewModel>();
             _thumbnailsToLoad.Select(vm =>
@@ -68,14 +72,17 @@
                 .Merge(_maxParallelThumbnailLoads)
                 .Subscribe(_ => { }, error => RxApp.DefaultExceptionHandler.OnNext(error));
 
+            HasSearch = _sfService.SearchParameters.Select(parameters => parameters.Any());
+            SearchString = _sfService.SearchParameters.Select(parameters =>
+                parameters.Any() ? "Showing files " + string.Join(" + files ", parameters) : null);
+
             // This subscription isn't disposed on deactivation, since repopulating can be a bit slow for a large collection;
             // this operates under the assumption that the app will reuse a single GalleryViewModel for its whole lifetime,
             // so cleaning up resources properly isn't too big of a concern
-            _sfService.SelectedFiles()
-            .ToObservableChangeSet()
-            .Transform(file => new GalleryThumbnailViewModel(file))
-            .Bind(out _items)
-            .ActOnEveryObject(OnItemAdded, OnItemRemoved);
+            _sfService.SelectedFiles.ToObservableChangeSet()
+                .Transform(file => new GalleryThumbnailViewModel(file))
+                .Bind(out _items)
+                .ActOnEveryObject(OnItemAdded, OnItemRemoved);
         }
 
         public string? UrlPathSegment => "Gallery";
@@ -83,11 +90,15 @@
         public IScreen HostScreen { get; }
 
         public ReactiveCommand<Unit, Unit> ToggleSelectModeCommand { get; }
+
         public ReactiveCommand<Unit, Unit> AddTagCommand { get; }
         public ReactiveCommand<Unit, Unit> EditTagsCommand { get; }
+
         public ReactiveCommand<GalleryThumbnailViewModel, Unit> ToggleSelectCommand { get; }
         public ReactiveCommand<Unit, Unit> SelectAllCommand { get; }
         public ReactiveCommand<Unit, Unit> DeselectAllCommand { get; }
+
+        public ReactiveCommand<Unit, Unit> ClearSearchCommand { get; }
 
         public ReadOnlyObservableCollection<GalleryThumbnailViewModel>? Items => _items;
 
@@ -95,6 +106,9 @@
 
         public IObservable<int> SelectionCount { get; }
         public IObservable<bool> HasSelection { get; }
+
+        public IObservable<bool> HasSearch { get; }
+        public IObservable<string?> SearchString { get; }
 
         private void ToggleSelectMode()
         {
@@ -174,6 +188,11 @@
         {
             var files = _selectedItems.Items.Select(vm => vm.File).ToArray();
             await Interactions.ShowDialog.Handle(new EditTagsViewModel(_dbService, files));
+        }
+
+        private void ClearSearch()
+        {
+            _sfService.SetSearchParameters(new List<ISearchParameter>());
         }
     }
 }

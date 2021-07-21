@@ -42,7 +42,7 @@
             _dataService = dataService ?? Locator.Current.GetService<IDataService>();
 
             sfService ??= Locator.Current.GetService<ISelectedFilesService>();
-            _selectedFiles = sfService.SelectedFiles();
+            _selectedFiles = sfService.SelectedFiles;
 
             Description = (_file as TrackedFile)?.Description ?? string.Empty;
             EditedDescription = Description;

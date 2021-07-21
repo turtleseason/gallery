@@ -1,10 +1,15 @@
-﻿namespace Gallery.Data
+﻿/// This class exposes and updates the set of currently selected files
+/// based on the current search parameters and selected folders.
+/// (These are the files displayed in GalleryView/cycled through in SingleFileView).
+
+namespace Gallery.Data
 {
     using System;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Diagnostics;
     using System.Linq;
+    using System.Reactive.Subjects;
 
     using DynamicData;
     using DynamicData.Binding;
@@ -17,7 +22,9 @@
 
     public interface ISelectedFilesService
     {
-        ReadOnlyObservableCollection<GalleryFile> SelectedFiles();
+        ReadOnlyObservableCollection<GalleryFile> SelectedFiles { get; }
+
+        IObservable<IEnumerable<ISearchParameter>> SearchParameters { get; }
 
         ////void LoadFileCollection(FileCollection collection, bool ignoreSourceFolders = false);
 
@@ -35,9 +42,13 @@
         private IDataService _dbService;
         private IFileSystemUtil _fsService;
 
-        private ISourceCache<GalleryFile, string> _filesCache;
-        private FileCollection _params;
+        private FileCollection _selectionParameters;
 
+        // Instead of using a Subject, maybe implement change notifications in FileCollection & subscribe to that?
+        // Not sure which approach makes more sense
+        private BehaviorSubject<IList<ISearchParameter>> _parametersObservable;
+
+        private ISourceCache<GalleryFile, string> _filesCache;
         private ReadOnlyObservableCollection<GalleryFile> _observableCollection;
 
         public SelectedFilesService(IDataService? dbService = null, IFileSystemUtil? fsService = null)
@@ -45,7 +56,9 @@
             _dbService = dbService ?? Locator.Current.GetService<IDataService>();
             _fsService = fsService ?? Locator.Current.GetService<IFileSystemUtil>();
 
-            _params = new FileCollection() { IncludeUntracked = true };
+            _selectionParameters = new FileCollection() { IncludeUntracked = true };
+
+            _parametersObservable = new BehaviorSubject<IList<ISearchParameter>>(_selectionParameters.Parameters);
 
             _filesCache = new SourceCache<GalleryFile, string>(x => x.FullPath);
             _filesCache.AddOrUpdate(_dbService.GetFiles());
@@ -60,10 +73,10 @@
                 .Subscribe();
         }
 
-        public ReadOnlyObservableCollection<GalleryFile> SelectedFiles()
-        {
-            return _observableCollection;
-        }
+        public ReadOnlyObservableCollection<GalleryFile> SelectedFiles => _observableCollection;
+
+        /// This always returns the current value when subscribed.
+        public IObservable<IEnumerable<ISearchParameter>> SearchParameters => _parametersObservable;
 
         /////// Replaces the current FileCollection with a new one
         /////// (for example, when running a search, or loading a saved search/collection).
@@ -84,11 +97,13 @@
         /// (Temp?)
         public void SetSearchParameters(IList<ISearchParameter> parameters)
         {
-            _params.Parameters = parameters;
+            _selectionParameters.Parameters = parameters;
+
+            _parametersObservable.OnNext(parameters);
 
             _filesCache.Clear();
 
-            AddOrUpdateFiles(_params.Parameters, _params.SourceFolders.ToArray());
+            AddOrUpdateFiles(_selectionParameters.Parameters, _selectionParameters.SourceFolders.ToArray());
         }
 
         /// Adds the given folders to the current source folders [doesn't check for duplicates].
@@ -99,14 +114,14 @@
                 return;
             }
 
-            if (_params.SourceFolders.Count == 0)
+            if (_selectionParameters.SourceFolders.Count == 0)
             {
                 _filesCache.Clear();
             }
 
-            _params.SourceFolders.AddRange(paths);
+            _selectionParameters.SourceFolders.AddRange(paths);
 
-            AddOrUpdateFiles(_params.Parameters, paths);
+            AddOrUpdateFiles(_selectionParameters.Parameters, paths);
         }
 
         /// Removes the given folders from the list of source folders
@@ -117,7 +132,7 @@
                 return;
             }
 
-            _params.SourceFolders.RemoveMany(paths);
+            _selectionParameters.SourceFolders.RemoveMany(paths);
 
             _filesCache.Remove(_filesCache.Items.Where(x => paths.Contains(x.Directory)));
         }
@@ -125,16 +140,16 @@
         /// Clears all source folders and shows tracked files from all folders.
         public void ShowAllTrackedFiles()
         {
-            _params.SourceFolders.Clear();
+            _selectionParameters.SourceFolders.Clear();
 
-            AddOrUpdateFiles(_params.Parameters);
+            AddOrUpdateFiles(_selectionParameters.Parameters);
         }
 
         private void AddOrUpdateFiles(IList<ISearchParameter> parameters, params string[] folders)
         {
             _filesCache.AddOrUpdate(_dbService.GetFiles(parameters, folders));
 
-            if (_params.IncludeUntracked)
+            if (_selectionParameters.IncludeUntracked)
             {
                 AddOrUpdateUntracked(parameters, folders);
             }
@@ -189,7 +204,7 @@
                         {
                             trackedFile.Tags.Remove((Tag)change.Item);
 
-                            if (!ISearchParameter.MatchesAllParameters(trackedFile, _params.Parameters))
+                            if (!ISearchParameter.MatchesAllParameters(trackedFile, _selectionParameters.Parameters))
                             {
                                 _filesCache.Remove(trackedFile);
                             }
@@ -204,8 +219,8 @@
             else if (change.Reason == DataChangeReason.Add && change.EntityType == DataChangeEntity.File)
             {
                 var file = (TrackedFile)change.Item;
-                if (_params.SourceFolders.Contains(file.Directory)
-                    && ISearchParameter.MatchesAllParameters(file, _params.Parameters))
+                if (_selectionParameters.SourceFolders.Contains(file.Directory)
+                    && ISearchParameter.MatchesAllParameters(file, _selectionParameters.Parameters))
                 {
                     _filesCache.AddOrUpdate(file);
                 }
@@ -227,9 +242,9 @@
                 _filesCache.Remove(_filesCache.Items.Where(file => file.Directory == path));
 
                 // Ensure files are re-added to the collection as untracked files if necessary
-                if (_params.IncludeUntracked)
+                if (_selectionParameters.IncludeUntracked)
                 {
-                    AddOrUpdateUntracked(_params.Parameters, path);
+                    AddOrUpdateUntracked(_selectionParameters.Parameters, path);
                 }
             }
             else if (change.Reason == DataChangeReason.Update && change.EntityType == DataChangeEntity.TagGroup)

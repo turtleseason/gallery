@@ -81,8 +81,11 @@
 
         public void ClearSearch()
         {
-            _sfService.SetSearchParameters(new List<ISearchParameter>());
-            (HostScreen as MainShellViewModel)?.GalleryCommand.Execute().Subscribe();
+            _parameters.Edit(list =>
+            {
+                list.Clear();
+                list.Add(new SearchCriteriaViewModel(_allTags));
+            });
         }
     }
 }

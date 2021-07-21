@@ -11,7 +11,7 @@
              x:Class="Gallery.UI.Views.GalleryView">
 
     <DockPanel Background="#272727">
-        <v:GallerySelectionView DockPanel.Dock="Top" Background="#111111"/>
+        <v:GalleryToolbarView DockPanel.Dock="Top" Background="#111111"/>
     
         <ScrollViewer Padding="0,0,10,0">
             <ItemsRepeater Items="{Binding Items}" Margin="5">

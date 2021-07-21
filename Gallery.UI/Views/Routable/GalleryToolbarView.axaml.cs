@@ -4,9 +4,9 @@ namespace Gallery.UI.Views
     using Avalonia.Controls;
     using Avalonia.Markup.Xaml;
 
-    public partial class GallerySelectionView : UserControl
+    public partial class GalleryToolbarView : UserControl
     {
-        public GallerySelectionView()
+        public GalleryToolbarView()
         {
             InitializeComponent();
         }

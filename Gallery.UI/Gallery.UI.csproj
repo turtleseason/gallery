@@ -37,8 +37,8 @@
     <Compile Update="Views\Dialogs\EditTagGroupsView.axaml.cs">
       <DependentUpon>EditTagGroupsView.axaml</DependentUpon>
     </Compile>
-    <Compile Update="Views\Routable\GallerySelectionView.axaml.cs">
-      <DependentUpon>GallerySelectionView.axaml</DependentUpon>
+    <Compile Update="Views\Routable\GalleryToolbarView.axaml.cs">
+      <DependentUpon>GalleryToolbarView.axaml</DependentUpon>
     </Compile>
   </ItemGroup>
 </Project>

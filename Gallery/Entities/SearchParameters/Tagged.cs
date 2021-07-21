@@ -29,5 +29,11 @@
                 return tracked.Tags.Contains(_tag);
             }
         }
+
+        public override string ToString()
+        {
+            string value = (_tag.Value != null && !_ignoreValue) ? $": {_tag.Value}" : string.Empty;
+            return $"tagged \"{_tag.Name}{value}\"";
+        }
     }
 }
