@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="Gallery.UI.Views.SearchCriteriaView">
+    <StackPanel Orientation="Horizontal">
+        <StackPanel.Styles>
+            <Style Selector="ComboBox">
+                <Setter Property="MinWidth" Value="80"/>
+                <Setter Property="MaxWidth" Value="300"/>
+                <Setter Property="VerticalAlignment" Value="Stretch"/>
+                <Setter Property="Margin" Value="0,0,10,0"/>
+            </Style>
+        </StackPanel.Styles>
+
+        <ComboBox SelectedIndex="0">
+            <ComboBox.Items>
+                <ComboBoxItem>
+                    <TextBlock>Tagged</TextBlock>
+                </ComboBoxItem>
+            </ComboBox.Items>
+        </ComboBox>
+
+        <ComboBox Items="{Binding Tags}" SelectedItem="{Binding SelectedTag}"/>
+
+        <ComboBox Items="{Binding Values}" SelectedItem="{Binding SelectedValue}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Value}"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+    </StackPanel>
+</UserControl>

@@ -192,7 +192,6 @@
             await _database.DeleteUnusedTags();
         }
 
-
         public void CreateTagGroup(TagGroup group)
         {
             _database.AddTagGroup(group);

@@ -6,40 +6,25 @@
              xmlns:c="using:Gallery.UI.Converters"
              mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="450"
              x:Class="Gallery.UI.Views.SearchView">
-    <StackPanel Margin="10">
-        <Label Margin="0,0,0,5">Search for files...</Label>
+    <StackPanel Margin="10" Spacing="10">
+        <Label>Search for files...</Label>
 
-        <StackPanel Orientation="Horizontal">
-            <StackPanel.Styles>
-                <Style Selector="ComboBox">
-                    <Setter Property="VerticalAlignment" Value="Stretch"/>
-                    <Setter Property="Margin" Value="0,0,10,0"/>        
-                </Style>
-            </StackPanel.Styles>
-            
-            <ComboBox SelectedIndex="0">
-                <ComboBox.Items>
-                    <ComboBoxItem>
-                        <TextBlock>Tagged</TextBlock>
-                    </ComboBoxItem>
-                </ComboBox.Items>
-            </ComboBox>
+        <ItemsControl Items="{Binding Parameters}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Spacing="10"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
 
-            <ComboBox Items="{Binding Tags}" SelectedItem="{Binding SelectedTag}"/>
-            
-            <ComboBox Items="{Binding Values}" SelectedItem="{Binding SelectedValue}">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Value}"/>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-            
-        </StackPanel>
+        <Button Command="{Binding AddParameter}" Background="Transparent">
+            <PathIcon Data="{StaticResource add_circle_regular}"
+                      Width="30" Height="30"/>
+        </Button>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Command="{Binding ClearSearch}">Clear</Button>
-            <Button Command="{Binding DoSearch}">Search</Button>
+            <Button Command="{Binding SearchCommand}">Search</Button>
         </StackPanel>
     </StackPanel>
 
