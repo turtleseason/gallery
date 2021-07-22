@@ -14,16 +14,18 @@
     public class MainShellViewModel : ViewModelBase, IScreen
     {
         private readonly GalleryViewModel _galleryVm;
+        private readonly SearchViewModel _searchVm;
 
         public MainShellViewModel()
         {
             _galleryVm = new GalleryViewModel(this);
+            _searchVm = new SearchViewModel(this);
 
             GalleryCommand = ReactiveCommand.CreateFromObservable<Unit, IRoutableViewModel>(
                 _ => Router.Navigate.Execute(_galleryVm));
 
             SearchCommand = ReactiveCommand.CreateFromObservable<Unit, IRoutableViewModel>(
-                _ => Router.Navigate.Execute(new SearchViewModel(this)));
+                _ => Router.Navigate.Execute(_searchVm));
 
             FileViewCommand = ReactiveCommand.CreateFromObservable<GalleryFile, IRoutableViewModel>(
                 file => Router.Navigate.Execute(new SingleFileViewModel(this, file)));

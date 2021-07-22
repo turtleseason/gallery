@@ -1,11 +1,13 @@
 ﻿namespace Gallery.UI.ViewModels
 {
     using System;
-    using System.Collections.Generic;
     using System.Collections.ObjectModel;
+    using System.Diagnostics;
     using System.Linq;
+    using System.Reactive.Linq;
 
     using DynamicData;
+    using DynamicData.Binding;
 
     using Gallery.Entities;
 
@@ -18,41 +20,60 @@
 
     public class SearchCriteriaViewModel : ViewModelBase, IValidatableViewModel
     {
-        private static readonly ValueOption[] _defaultOptions = new ValueOption[]
-        {
-            new ValueOption { Filter = ValueFilter.Any, Value = "(Any value)" },
-            ////new ValueOption { Filter = ValueFilter.None, Value = "(No value)" },
-        };
-
-        private IEnumerable<Tag> _tags;
+        private ReadOnlyObservableCollection<Tag> _tagNames;
+        private ReadOnlyObservableCollection<ValueOption> _values;
 
         private Tag _selectedTag;
         private ValueOption _selectedValue;
 
-        public SearchCriteriaViewModel(IEnumerable<Tag> tags)
+        public SearchCriteriaViewModel(IObservableCache<Tag, Tag> tagsSource)
         {
-            _tags = tags;
+            var tags = tagsSource.Connect();
 
-            Tags = new ObservableCollection<Tag>(_tags.GroupBy(x => x.Name)
-                                                      .Select(x => new Tag(x.Key, group: x.First().Group))
-                                                      .OrderBy(x => x.Name));
-            Values = new ObservableCollection<ValueOption>();
+            ValueOption anyOption = new() { Filter = ValueFilter.Any, Value = "(Any value)" };
 
-            this.WhenAnyValue(x => x.SelectedTag).Subscribe(_ => UpdateValues());
+            // Tag names dropdown
+            tags.Transform(tag => new Tag(tag.Name, group: tag.Group))
+                .DistinctValues(tag => tag)
+                .Sort(SortExpressionComparer<Tag>.Ascending(tag => tag.Group.Name)
+                                                 .ThenBy(tag => tag.Name))
+                .Bind(out _tagNames)
+                .Subscribe();
 
-            SelectedTag = Tags.Count > 1 ? Tags[0] : default;
-            _selectedValue = _defaultOptions[0];
+            // Tag values dropdown
+            var selectedTagFilter = this.WhenAnyValue(vm => vm.SelectedTag)
+                .Select<Tag, Func<Tag, bool>>(selectedTag => tag => tag.Name == selectedTag.Name);
+
+            tags.Filter(selectedTagFilter)
+                .Transform(tag => tag.Value == null ?
+                    new ValueOption { Filter = ValueFilter.None, Value = "(No value)" }
+                    : new ValueOption { Filter = ValueFilter.Value, Value = tag.Value! })
+                .StartWithItem(anyOption, default)
+                .Sort(
+                    SortExpressionComparer<ValueOption>
+                        .Ascending(option => option.Filter)
+                        .ThenByAscending(option => option.Value))
+                .Bind(out _values)
+                .Subscribe();
+
+            // Reset selected value to default when invalid
+            this.WhenAnyValue(vm => vm.SelectedValue)
+                .Where(value => value == default)
+                .Subscribe(_ => SelectedValue = anyOption);
+
+            SelectedTag = _tagNames.Count > 0 ? _tagNames[0] : default;
+            _selectedValue = anyOption;
 
             this.ValidationRule(vm => vm.SelectedTag, tag => tag.Name != null, "Selected tag is invalid");
             this.ValidationRule(vm => vm.SelectedValue, value => value != null, "Selected value is invalid");
         }
 
-        public enum ValueFilter { Any, None, Value }
+        public enum ValueFilter { Any = 0, None = 1, Value = 2 }
 
         public ValidationContext ValidationContext { get; } = new ValidationContext();
 
-        public ObservableCollection<Tag> Tags { get; set; }
-        public ObservableCollection<ValueOption> Values { get; set; }
+        public ReadOnlyObservableCollection<Tag> Tags => _tagNames;
+        public ReadOnlyObservableCollection<ValueOption> Values => _values;
 
         public Tag SelectedTag { get => _selectedTag; set => this.RaiseAndSetIfChanged(ref _selectedTag, value); }
         public ValueOption SelectedValue { get => _selectedValue; set => this.RaiseAndSetIfChanged(ref _selectedValue, value); }
@@ -68,19 +89,6 @@
             bool ignoreValue = SelectedValue.Filter == ValueFilter.Any;
 
             return new Parameter.Tagged(new Tag(SelectedTag.Name, value, SelectedTag.Group), ignoreValue);
-        }
-
-        private void UpdateValues()
-        {
-            Values.Clear();
-            Values.AddRange(_defaultOptions);
-            Values.AddRange(_tags.Where(tag => tag.Name == SelectedTag.Name)
-                                 .Select(tag => tag.Value == null ?
-                                    new ValueOption { Filter = ValueFilter.None, Value = "(No value)" }
-                                  : new ValueOption { Filter = ValueFilter.Value, Value = tag.Value! })
-                                 .OrderBy(option => option.Filter == ValueFilter.None ? 0 : 1)
-                                 .ThenBy(option => option.Value));
-            SelectedValue = Values[0];
         }
 
         public record ValueOption

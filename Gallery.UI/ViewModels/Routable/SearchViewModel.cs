@@ -6,6 +6,7 @@
     using System.Diagnostics;
     using System.Linq;
     using System.Reactive;
+    using System.Reactive.Disposables;
     using System.Reactive.Linq;
 
     using DynamicData;
@@ -23,7 +24,8 @@
         private readonly IDataService _dbService;
         private readonly ISelectedFilesService _sfService;
 
-        private IEnumerable<Tag> _allTags;
+        private IObservableCache<Tag, Tag> _tags;
+
         private ISourceList<SearchCriteriaViewModel> _parameters;
         private ReadOnlyObservableCollection<SearchCriteriaViewModel> _parametersView;
 
@@ -34,10 +36,13 @@
             _dbService = dbService ?? Locator.Current.GetService<IDataService>();
             _sfService = sfService ?? Locator.Current.GetService<ISelectedFilesService>();
 
-            _allTags = _dbService.GetAllTags();
+            var tagsCache = new SourceCache<Tag, Tag>(tag => tag);
+            tagsCache.AddOrUpdate(_dbService.GetAllTags());
+
+            _tags = tagsCache.AsObservableCache();
 
             _parameters = new SourceList<SearchCriteriaViewModel>();
-            _parameters.Add(new SearchCriteriaViewModel(_allTags));
+            _parameters.Add(new SearchCriteriaViewModel(_tags));
 
             // canSearch is true whenever all of the child SearchCriteriaViewModels are valid; code based on
             // https://github.com/RolandPheasant/DynamicData.Snippets/blob/master/DynamicData.Snippets/InspectItems/InspectCollectionWithObservable.cs
@@ -52,6 +57,9 @@
             SearchCommand = ReactiveCommand.Create(DoSearch, canSearch);
 
             source.Bind(out _parametersView).Subscribe();
+
+            this.WhenActivated((CompositeDisposable _) =>
+                tagsCache.EditDiff(_dbService.GetAllTags(), (a, b) => a.Name == b.Name && a.Value == b.Value));
         }
 
         public SearchViewModel() : this(null!, null, null)
@@ -67,7 +75,7 @@
 
         public void AddParameter()
         {
-            _parameters.Add(new SearchCriteriaViewModel(_allTags));
+            _parameters.Add(new SearchCriteriaViewModel(_tags));
         }
 
         public void DoSearch()
@@ -84,7 +92,7 @@
             _parameters.Edit(list =>
             {
                 list.Clear();
-                list.Add(new SearchCriteriaViewModel(_allTags));
+                list.Add(new SearchCriteriaViewModel(_tags));
             });
         }
     }
