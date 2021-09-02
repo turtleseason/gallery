@@ -8,6 +8,9 @@
     using System.Reactive.Linq;
     using System.Threading.Tasks;
 
+    using DynamicData;
+    using DynamicData.Binding;
+
     using Gallery.Data;
     using Gallery.Entities;
 
@@ -18,6 +21,8 @@
     public class AddTagsViewModel : DialogViewModelBase
     {
         private readonly IDataService _dbService;
+
+        private ReadOnlyObservableCollection<string> _values;
 
         private string _name = string.Empty;
         private string _value = string.Empty;
@@ -35,12 +40,21 @@
             AddTagsCommand = ReactiveCommand.Create(AddTagsAndClose, canAddTag);
             EditTagGroupsCommand = ReactiveCommand.CreateFromTask(EditTagGroups);
 
-            Tags = new ObservableCollection<Tag>(_dbService.GetAllTags()
+            Tags = new ObservableCollection<Tag>(_dbService.GetAllTags());
+
+            TagNames = new ObservableCollection<Tag>(Tags
                 .GroupBy(x => x.Name)
                 .Select(group => new Tag(group.Key, group: group.First().Group)));
 
             AvailableGroups = new ObservableCollection<TagGroup>(_dbService.GetAllTagGroups());
             _selectedGroup = AvailableGroups.First();
+
+            Tags.ToObservableChangeSet(tag => tag)
+                .Filter(this.WhenAnyValue(x => x.Name)
+                            .Select<string, Func<Tag, bool>>(name => tag => tag.Name == name && tag.Value != null))
+                .Transform(tag => tag.Value!)
+                .Bind(out _values)
+                .Subscribe();
 
             // Reset LockSelectedGroup when the user starts typing in the Name field
             this.WhenAnyValue(x => x.Name).Subscribe(_ => LockSelectedGroup = false);
@@ -52,7 +66,12 @@
         public ReactiveCommand<Unit, Unit> EditTagGroupsCommand { get; }
 
         public ObservableCollection<Tag> Tags { get; set; }
+
+        // Use Tags instead of strings in order to preserve the TagGroup
+        public ObservableCollection<Tag> TagNames { get; set; }
         public ObservableCollection<TagGroup> AvailableGroups { get; set; }
+
+        public ReadOnlyObservableCollection<string> Values => _values;
 
         public string Name { get => _name; set => this.RaiseAndSetIfChanged(ref _name, value); }
         public string Value { get => _value; set => this.RaiseAndSetIfChanged(ref _value, value); }
@@ -68,7 +87,7 @@
         {
             // TODO: translate tags to some kind of dictionary/hashtable? Or call a db method..?
             // (maybe db offers "Get tag names" dictionary tagName key -> tagGroup value?)
-            var lookup = Tags.FirstOrDefault(x => x.Name == Name);
+            var lookup = TagNames.FirstOrDefault(x => x.Name == Name);
             if (lookup.Name != null)
             {
                 SelectedGroup = lookup.Group;

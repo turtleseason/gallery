@@ -24,7 +24,7 @@
                 <Label>Tag name:</Label>
                 <AutoCompleteBox Name="TagName"
                                  Text="{Binding Name}"
-                                 Items="{Binding Tags}"
+                                 Items="{Binding TagNames}"
                                  ValueMemberBinding="{Binding Name}"
                                  FilterMode="Contains"/>
             </StackPanel>
@@ -34,7 +34,10 @@
                     <Label>Value:</Label>
                     <Label Classes="small">(optional)</Label>
                 </StackPanel>
-                <TextBox Text="{Binding Value}"/>
+                <AutoCompleteBox Text="{Binding Value}"
+                                 Items="{Binding Values}"
+                                 FilterMode="Contains"
+                                 MinimumPrefixLength="0"/>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" Spacing="10">
